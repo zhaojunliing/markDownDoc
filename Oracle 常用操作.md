@@ -46,6 +46,7 @@ exp XXX/XXX@localhost:1521/orcl file=d:/file_name_YYYYMMdd00.dmp owner="XXX"
 
 #### 导入用户表数据
 ```
+-- 禁用触发器后再进行该操作,导入成功后需要重新启用触发器
 -- 只导入表数据
 imp YYY/YYY@localhost:1521/orcl file=e:/dbbak/file_name_YYYYMMdd00.dmp fromuser='XXX' touser='YYY' data_only=y
 
