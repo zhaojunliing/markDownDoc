@@ -89,3 +89,8 @@ select count(*) from v$session where status='ACTIVE'; --并发连接数
   
 show parameter processes; --最大连接 
 ```
+#### 清空表数据
+```
+truncate table table_name; --速度快，原理是删除表后重建表，正在使用的时候可能没办法删除成功。
+delete from table_name;  --普通删除数据表操作
+```
