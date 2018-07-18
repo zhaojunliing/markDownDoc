@@ -46,6 +46,7 @@ exp XXX/XXX@localhost:1521/orcl file=d:/file_name_YYYYMMdd00.dmp owner="XXX"
 
 #### 导入用户表数据
 ```
+-- 禁用触发器后再进行该操作,导入成功后需要重新启用触发器
 -- 只导入表数据
 imp YYY/YYY@localhost:1521/orcl file=e:/dbbak/file_name_YYYYMMdd00.dmp fromuser='XXX' touser='YYY' data_only=y
 
@@ -87,4 +88,9 @@ select count(*) from v$session; --当前的session连接数
 select count(*) from v$session where status='ACTIVE'; --并发连接数  
   
 show parameter processes; --最大连接 
+```
+#### 清空表数据
+```
+truncate table table_name; --速度快，原理是删除表后重建表，正在使用的时候可能没办法删除成功。
+delete from table_name;  --普通删除数据表操作
 ```
