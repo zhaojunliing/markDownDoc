@@ -98,7 +98,8 @@ kill 5555
 
 #### find
 ```
-查找文件
+find /etc -name xxx 
+查找某个文件夹下的名称为xxx的文件
 ```
 
 #### ifconfig
