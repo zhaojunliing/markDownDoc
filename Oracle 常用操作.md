@@ -94,3 +94,11 @@ show parameter processes; --最大连接
 truncate table table_name; --速度快，原理是删除表后重建表，正在使用的时候可能没办法删除成功。
 delete from table_name;  --普通删除数据表操作
 ```
+
+#### 禁用Oracle约束条件和触发器
+```
+alter table table_name enable constraint constraint_name;  --启用外键约束
+alter table table_name disable constraint constraint_name;  --禁用外键约束
+select 'alter table '||table_name||' enable constraint '||constraint_name||';' from user_constraints where constraint_type='R';
+select 'alter table '||table_name||' disable constraint '||constraint_name||';' from user_constraints where constraint_type='R';
+```
