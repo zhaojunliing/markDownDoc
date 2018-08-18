@@ -102,3 +102,56 @@ alter table table_name disable constraint constraint_name;  --禁用外键约束
 select 'alter table '||table_name||' enable constraint '||constraint_name||';' from user_constraints where constraint_type='R';
 select 'alter table '||table_name||' disable constraint '||constraint_name||';' from user_constraints where constraint_type='R';
 ```
+
+#### 查询连接的用户并杀死连接
+```
+--查看链接的用户session
+select username,sid,serial# from v$session;
+--杀死链接的用户
+alter system kill session '18,5';
+--批量杀死连接的用户
+SELECT 'alter system kill session '||'('||''''||sid||''''||','||''''||serial#||');' username,sid,serial# from v$session t WHERE t.username = 'HCQS16';
+```
+
+#### 删除用户操作
+```
+以system用户登录，查找需要删除的用户：
+
+--查找用户
+select  *　from dba_users;
+
+--查找工作空间的路径
+select * from dba_data_files; 
+
+--删除用户
+drop user 用户名称 cascade;
+--删除表空间
+drop tablespace 表空间名称 including contents and datafiles cascade constraint;
+
+例如：删除用户名成为LYK，表空间名称为LYK
+
+--删除用户，及级联关系也删除掉
+drop user LYK cascade;
+--删除表空间，及对应的表空间文件也删除掉
+drop tablespace LYK including contents and datafiles cascade constraint;
+```
+
+#### 创建db_link
+```
+两种创建db_link的sql
+create database link HCQS
+   connect to name identified by HCQS  using '
+       (DESCRIPTION = 
+           (ADDRESS_LIST = 
+               (ADDRESS = 
+                  (PROTOCOL = TCP)
+                  (HOST = 10.96.2.32)
+                  (PORT = 1521)) ) 
+               (CONNECT_DATA = 
+                   (SERVICE_NAME = oraqsdb)oraqsdb
+          ) )';
+
+create database link HCQS
+  connect to HCQS identified by HCQS
+  using '10.96.2.32:1521/oraqsdb';
+```
