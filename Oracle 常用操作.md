@@ -54,9 +54,25 @@ imp YYY/YYY@localhost:1521/orcl file=e:/dbbak/file_name_YYYYMMdd00.dmp fromuser=
 imp YYY/YYY@localhost:1521/orcl file=e:/dbbak/file_name_YYYYMMdd00.dmp data_only=y tables=(table_name1,table_name2)
 ```
 
-#### 数据库表空间删除
+#### 数据库表空间操作
 ```
-drop tablespace ZDCLBX including contents and datafiles;
+drop tablespace ZDCLBX including contents and datafiles;  --删除表空间及数据文件
+select tablespace_name,sum(bytes) from dba_free_space group by tablespace_name;  -- 查询表空间剩余量
+select tablespace_name,sum(bytes) from DBA_DATA_FILES group by tablespace_name;  -- 查询表空间总量
+
+-- 表空间数据文件操作
+方法1：给表空间增加数据文件
+ALTER TABLESPACE app_data ADD DATAFILE 'D:\ORACLE\PRODUCT\10.2.0\ORADATA\EDWTEST\APP03.DBF' SIZE 50M;
+ 
+方法2：新增数据文件，并且允许数据文件自动增长
+ALTER TABLESPACE app_data ADD DATAFILE 'D:\ORACLE\PRODUCT\10.2.0\ORADATA\EDWTEST\APP04.DBF' SIZE 50M AUTOEXTEND ON NEXT 5M MAXSIZE 100M;
+ 
+方法3：允许已存在的数据文件自动增长
+ALTER DATABASE DATAFILE 'D:\ORACLE\PRODUCT\10.2.0\ORADATA\EDWTEST\APP03.DBF' AUTOEXTEND ON NEXT 5M MAXSIZE 100M;
+ 
+方法4：手工改变已存在数据文件的大小
+ALTER DATABASE DATAFILE 'D:\ORACLE\PRODUCT\10.2.0\ORADATA\EDWTEST\APP02.DBF' RESIZE 100M;
+
 ```
 
 #### 数据库表空间大小和数据文件位置查询
@@ -162,19 +178,4 @@ select t.table_name,t.num_rows from user_tables t ORDER BY NUM_ROWS DESC; -- 查
 select t.table_name,t.num_rows from user_tables@dblink t ORDER BY NUM_ROWS DESC; --查询dblink的数据总量
 exec dbms_stats.gather_schema_stats('用户名'); -- 用户下所有表生成统计数据
 exec dbms_stats.gather_table_stats(user,'表名'); -- 生成指定表统计数据
-```
-
-#### oracle表空间操作
-```
-方法1：给表空间增加数据文件
-ALTER TABLESPACE app_data ADD DATAFILE 'D:\ORACLE\PRODUCT\10.2.0\ORADATA\EDWTEST\APP03.DBF' SIZE 50M;
- 
-方法2：新增数据文件，并且允许数据文件自动增长
-ALTER TABLESPACE app_data ADD DATAFILE 'D:\ORACLE\PRODUCT\10.2.0\ORADATA\EDWTEST\APP04.DBF' SIZE 50M AUTOEXTEND ON NEXT 5M MAXSIZE 100M;
- 
-方法3：允许已存在的数据文件自动增长
-ALTER DATABASE DATAFILE 'D:\ORACLE\PRODUCT\10.2.0\ORADATA\EDWTEST\APP03.DBF' AUTOEXTEND ON NEXT 5M MAXSIZE 100M;
- 
-方法4：手工改变已存在数据文件的大小
-ALTER DATABASE DATAFILE 'D:\ORACLE\PRODUCT\10.2.0\ORADATA\EDWTEST\APP02.DBF' RESIZE 100M;
 ```
