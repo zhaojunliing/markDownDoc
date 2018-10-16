@@ -126,7 +126,7 @@ select username,sid,serial# from v$session;
 --杀死链接的用户
 alter system kill session '18,5';
 --批量杀死连接的用户
-SELECT 'alter system kill session '||'('||''''||sid||''''||','||''''||serial#||');' username,sid,serial# from v$session t WHERE t.username = 'HCQS16';
+SELECT 'alter system kill session '||''''||sid||','||serial#||''''||';' username,sid,serial# from v$session t WHERE t.username = 'ZZKF0415' ;
 ```
 
 #### 删除用户操作
