@@ -71,6 +71,13 @@ ALTER TABLESPACE app_data ADD DATAFILE 'D:\ORACLE\PRODUCT\10.2.0\ORADATA\EDWTEST
 ALTER DATABASE DATAFILE 'D:\ORACLE\PRODUCT\10.2.0\ORADATA\EDWTEST\APP03.DBF' AUTOEXTEND ON NEXT 5M MAXSIZE 100M;
  
 方法4：手工改变已存在数据文件的大小
+--查询最大占用空间
+select tablespace_name, file_id, file_name, 
+round(bytes/(1024*1024),0) total_space --表空间最大值
+,(SELECT MAX(block_id)*8/1024 FROM dba_extents WHERE tablespace_name = 'GBLZ_CW') max_space --已使用表空间的最大值
+from dba_data_files f
+order by tablespace_name;
+
 ALTER DATABASE DATAFILE 'D:\ORACLE\PRODUCT\10.2.0\ORADATA\EDWTEST\APP02.DBF' RESIZE 100M;
 
 ```
