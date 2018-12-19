@@ -186,3 +186,138 @@ select t.table_name,t.num_rows from user_tables@dblink t ORDER BY NUM_ROWS DESC;
 exec dbms_stats.gather_schema_stats('用户名'); -- 用户下所有表生成统计数据
 exec dbms_stats.gather_table_stats(user,'表名'); -- 生成指定表统计数据
 ```
+
+#### 死锁查询
+···
+--共享锁：Share；排他锁：Exclusive；行共享锁：Row-S；行排他锁：Row-X
+select   V$SESSION.sid,v$session.SERIAL#,v$process.spid,   
+  rtrim(object_type)   object_type,rtrim(owner)   ||   '.'   ||   object_name   object_name,   
+  decode(lmode,       0,   'None',   
+  1,   'Null',   
+  2,   'Row-S',   
+  3,   'Row-X',   
+  4,   'Share',   
+  5,   'S/Row-X',   
+  6,   'Exclusive', 'Unknown')   LockMode,   
+  decode(request,   0,   'None',   
+  1,   'Null',   
+  2,   'Row-S',   
+  3,   'Row-X',   
+  4,   'Share',   
+  5,   'S/Row-X',   
+  6,   'Exclusive',   'Unknown')   RequestMode   
+  ,ctime,   block   b,   
+  v$session.username,MACHINE,MODULE,ACTION,   
+  decode(A.type,   
+  'MR',   'Media   Recovery',   
+  'RT','Redo   Thread',   
+  'UN','User   Name',   
+  'TX',   'Transaction',   
+  'TM',   'DML',   
+  'UL',   'PL/SQL   User   Lock',   
+  'DX',   'Distributed   Xaction',   
+  'CF',   'Control   File',   
+  'IS',   'Instance   State',   
+  'FS',   'File   Set',   
+  'IR',   'Instance   Recovery',   
+  'ST',   'Disk   Space   Transaction',   
+  'TS',   'Temp   Segment',   
+  'IV',   'Library   Cache   Invalida-tion',   
+  'LS',   'Log   Start   or   Switch',   
+  'RW',   'Row   Wait',   
+  'SQ',   'Sequence   Number',   
+  'TE',   'Extend   Table',   
+  'TT',   'Temp   Table',   
+  'Unknown')   LockType   
+  from   (SELECT   *   FROM   V$LOCK)   A,   all_objects, V$SESSION, v$process   
+  where   A.sid   >   6   
+  and   object_name<>'OBJ$'   
+  and   A.id1   =   all_objects.object_id   
+  and   A.sid=v$session.sid   
+  and   v$process.addr=v$session.paddr; 
+
+--查看锁表进程SQL语句1： 
+select sess.sid, sess.serial#, lo.oracle_username, lo.os_user_name, ao.object_name, lo.locked_mode 
+from v$locked_object lo, dba_objects ao, v$session sess 
+where ao.object_id = lo.object_id and lo.session_id = sess.sid; 
+
+--杀掉锁表进程： 
+--如有記錄則表示有lock，記錄下SID, serial# ，將記錄的ID替換下面的1143,24155，即可解除LOCK 
+alter system kill session '1143,24155'; 
+SELECT Saddr, Sid, Serial#, Paddr, Username, Status FROM V$session t WHERE t.SID = '1143';
+
+--查看机器锁定代码对象
+select b.sid,b.serial#,b.machine,b.terminal,b.program,b.process,b.status from v$lock a , v$session b
+where a.SID = b.SID and b.MACHINE='guoshaoyue-5040';
+
+--用这个可以查（可以查看哪台机器哪个用户锁了记录, 其中command是用来杀掉锁住记录的session ）：
+select s.sid,s.machine,o.object_name,l.oracle_username,l.locked_mode, 'ALTER  SYSTEM  KILL  SESSION  '''||s.sid||',  '||s.serial#||''';' Command
+from  v$locked_object  l,v$session  s,all_objects  o  where  l.session_id=s.sid  and  l.object_id=o.object_id; 
+
+--同样也是通过写sql从数据字典里查出来。 
+-- SELECT-SQL1 功能:检查被加锁的对象 
+select obj.OWNER||'.'||obj.OBJECT_NAME as OBJ_NAME, --// 对象名称(已经被锁住) 
+   obj.SUBOBJECT_NAME as SUBOBJ_NAME,     --// 子对象名称(已经被锁住) 
+   obj.OBJECT_ID as OBJ_ID,        --// 对象ID 
+   obj.OBJECT_TYPE as OBJ_TYPE,       --// 对象类型 
+   lock_obj.SESSION_ID as SESSION_ID,     --// 会话SESSION_ID 
+   lock_obj.ORACLE_USERNAME as ORA_USERNAME,  --// ORACLE系统用户名称 
+   lock_obj.OS_USER_NAME as OS_USERNAME,    --// 操作系统用户名称 
+   lock_obj.PROCESS as PROCESS       --// 进程编号 
+from 
+  ( select * from all_objects where object_id in (select object_id from v$locked_object)) obj, 
+  v$locked_object lock_obj 
+where obj.object_id=lock_obj.object_id; 
+
+-- SELECT-SQL2 功能:检查被加锁的对象以及加锁的会话信息 
+-- ALTER-SQL1 功能:杀死会话(SESSION_ID,SERIAL#),可以手工解除锁 
+-- 请手工修改SESSION_ID,SERIAL#为相应值 
+-- 注意:本功能慎重使用,有一定的破坏性,该SQL可以断开客户机和服务器的连接 
+-- ALTER SYSTEM KILL SESSION 'SESSION_ID,SERIAL#';
+select LOCK_INFO.OWNER||'.'||LOCK_INFO.OBJ_NAME as OBJ_NAME, --// 对象名称(已经被锁住) 
+   LOCK_INFO.SUBOBJ_NAME as SUBOBJ_NAME,       --// 子对象名称(已经被锁住) 
+   SESS_INFO.MACHINE as MACHINE,         --// 机器名称 
+   LOCK_INFO.SESSION_ID as SESSION_ID,       --// 会话SESSION_ID 
+   SESS_INFO.SERIAL# as SERIAL#,         --// 会话SERIAL# 
+   LOCK_INFO.ORA_USERNAME as ORA_USERNAME,      --// ORACLE系统用户名称 
+   LOCK_INFO.OS_USERNAME as OS_USERNAME,       --// 操作系统用户名称 
+   LOCK_INFO.PROCESS as PROCESS,         --// 进程编号 
+   LOCK_INFO.OBJ_ID as OBJ_ID,          --// 对象ID 
+   LOCK_INFO.OBJ_TYPE as OBJ_TYPE,         --// 对象类型 
+   SESS_INFO.LOGON_TIME as LOGON_TIME,       --// 登录时间 
+   SESS_INFO.PROGRAM  as PROGRAM,         --// 程序名称 
+   SESS_INFO.STATUS as STATUS,          --// 会话状态 
+   SESS_INFO.LOCKWAIT as LOCKWAIT,         --// 等待锁 
+   SESS_INFO.ACTION as ACTION,          --// 动作 
+   SESS_INFO.CLIENT_INFO as CLIENT_INFO       --// 客户信息 
+ 
+from 
+ ( 
+  select obj.OWNER as OWNER, 
+     obj.OBJECT_NAME as OBJ_NAME, 
+     obj.SUBOBJECT_NAME as SUBOBJ_NAME, 
+     obj.OBJECT_ID as OBJ_ID, 
+     obj.OBJECT_TYPE as OBJ_TYPE, 
+     lock_obj.SESSION_ID as SESSION_ID, 
+     lock_obj.ORACLE_USERNAME as ORA_USERNAME, 
+     lock_obj.OS_USER_NAME as OS_USERNAME, 
+     lock_obj.PROCESS as PROCESS 
+  from 
+   ( select * from all_objects where object_id in (select object_id from v$locked_object)) obj, 
+   v$locked_object lock_obj 
+  where obj.object_id=lock_obj.object_id 
+ )  LOCK_INFO, 
+ ( 
+  select SID, 
+     SERIAL#, 
+     LOCKWAIT, 
+     STATUS, 
+     PROGRAM, 
+     ACTION, 
+     CLIENT_INFO, 
+     LOGON_TIME, 
+     MACHINE 
+  from v$session 
+ ) SESS_INFO 
+where LOCK_INFO.SESSION_ID=SESS_INFO.SID ;
+···
