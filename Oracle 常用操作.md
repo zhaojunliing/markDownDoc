@@ -188,7 +188,7 @@ exec dbms_stats.gather_table_stats(user,'表名'); -- 生成指定表统计数�
 ```
 
 #### 死锁查询
-···
+```
 --共享锁：Share；排他锁：Exclusive；行共享锁：Row-S；行排他锁：Row-X
 select   V$SESSION.sid,v$session.SERIAL#,v$process.spid,   
   rtrim(object_type)   object_type,rtrim(owner)   ||   '.'   ||   object_name   object_name,   
@@ -320,4 +320,4 @@ from
   from v$session 
  ) SESS_INFO 
 where LOCK_INFO.SESSION_ID=SESS_INFO.SID ;
-···
+```
