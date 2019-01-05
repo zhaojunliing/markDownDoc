@@ -23,7 +23,11 @@ mv /home/oracle /home/weblogic
 cp -R /home/oracle /home/webligic
 复制文件夹oracle到weblogic下面
 ```
-
+#### scp
+```
+可以拷贝远程Linux系统的文件
+scp -r local_folder remote_username@remote_ip:remote_folder
+```
 #### df
 ```
 df -h
@@ -98,7 +102,8 @@ kill 5555
 
 #### find
 ```
-查找文件
+find /etc -name xxx 
+查找某个文件夹下的名称为xxx的文件
 ```
 
 #### ifconfig
@@ -120,3 +125,30 @@ kill 5555
 
 #### lsof
 
+#### uptime
+```
+uptime命令会显示当前的时间，同样也会显示系统已经运行的时间。从这些信息中，你就可以计算系统最后启动的时间了
+```
+#### nohup
+```
+可以使程序在后台运行，而不被挂断，退出工具的时候使用exit命令，而不是直接关闭窗口。
+nohup /root/start.sh &  --不输出日志文件类型
+nohup sh hcqs_blsj18081902.sh > nohup.file 2>&1 &   --打印日志文件到nohup.file中
+```
+#### jobs
+```
+查看正在后台运行的命令
+```
+
+#### fg
+```
+使用jobs命令查询后台运行的程序命令，然后使用fg将起调回前台运行
+[root@monitor snow]# jobs
+[1]+  Stopped                 nohup scp -P9922 -r src snow@192.168.6.165:/home/snow/data/
+[root@monitor snow]# fg 1
+nohup scp -P9922 -r src snow@192.168.6.165:/home/snow/data/
+```
+#### bg
+```
+同fg
+```
