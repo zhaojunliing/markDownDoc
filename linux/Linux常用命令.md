@@ -114,6 +114,30 @@ find /etc -name xxx
 #### route
 ```
 查看路由表信息
+
+方法一：
+	添加静态路由  
+	route add -net 192.168.0.0/24 gw 192.168.0.1 
+	route add -host 192.168.1.1 dev 192.168.0.1
+
+	删除路由 
+	route del -net 192.168.0.0/24 gw 192.168.0.1
+
+	增加默认路由
+	route add default gw 192.168.0.1
+方法二：
+	添加路由 
+	ip route add 192.168.0.0/24 via 192.168.0.1 
+	ip route add 192.168.1.1 dev 192.168.0.1 
+	
+	删除路由 
+	ip route del 192.168.0.0/24 via 192.168.0.1
+
+	增加默认路由 
+	ip route add default via 192.168.0.1 dev eth0
+
+参考网址：[https://blog.csdn.net/u010178308/article/details/80969259](https://blog.csdn.net/u010178308/article/details/80969259)
+
 ```
 
 #### top
@@ -151,4 +175,18 @@ nohup scp -P9922 -r src snow@192.168.6.165:/home/snow/data/
 #### bg
 ```
 同fg
+```
+
+#### arp
+```
+查询arp信息
+arp -a 
+
+
+```
+
+#### traceroute
+```
+查询路由跳数
+traceroute X:X:X:X
 ```
