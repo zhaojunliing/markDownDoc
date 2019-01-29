@@ -57,8 +57,8 @@ imp YYY/YYY@localhost:1521/orcl file=e:/dbbak/file_name_YYYYMMdd00.dmp data_only
 #### 数据库表空间操作
 ```
 drop tablespace ZDCLBX including contents and datafiles;  --删除表空间及数据文件
-select tablespace_name,sum(bytes) from dba_free_space group by tablespace_name;  -- 查询表空间剩余量
-select tablespace_name,sum(bytes) from DBA_DATA_FILES group by tablespace_name;  -- 查询表空间总量
+select tablespace_name,sum(bytes)/1024/1024/1024 as GB from dba_free_space group by tablespace_name;  -- 查询表空间剩余量
+select tablespace_name,sum(bytes)/1024/1024/1024 as GB from DBA_DATA_FILES group by tablespace_name;  -- 查询表空间总量
 
 -- 表空间数据文件操作
 方法1：给表空间增加数据文件
