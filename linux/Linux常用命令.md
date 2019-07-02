@@ -112,6 +112,9 @@ unzip -o test.zip -d tmp/
 ```
 tar -zxvf qwe.tar.gz
 解压文件
+
+tar -zcvf qwe.tar.gz qwe/
+压缩qwe目录下的文件
 ```
 
 #### yum
