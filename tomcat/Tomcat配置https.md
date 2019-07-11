@@ -1,6 +1,7 @@
-#Tomcat配置https步骤
-##1、为服务器生成证书
+# Tomcat配置https步骤
+## 1、为服务器生成证书
 进入控制台，切换到%JAVA_HOME%/bin目录，执行如下命令：
+
 ```
 keytool -genkey -v -alias tomcat -keyalg RSA -keystore D:\home\tomcat.keystore -validity 36500
 ```

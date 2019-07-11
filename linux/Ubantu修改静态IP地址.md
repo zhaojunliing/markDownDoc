@@ -3,7 +3,7 @@
 ## 一、修改静态IP
 
 1、查看物理网卡配置信息
-```
+```shell
 root@zzb-System-Product-Name:/home/baidu# ifconfig
 docker0   Link encap:以太网  硬件地址 02:42:54:e1:31:54  
           inet 地址:172.17.0.1  广播:0.0.0.0  掩码:255.255.0.0
@@ -35,22 +35,23 @@ lo        Link encap:本地环回
 
 **物理网卡名称为 enp4s0**
 2、编辑静态IP地址
-```
+```shell
 vi /etc/network/interfaces
 
-	# interfaces(5) file used by ifup(8) and ifdown(8)
-	auto lo
-	iface lo inet loopback
+# 增加enp4s0网卡对应的信息
+# interfaces(5) file used by ifup(8) and ifdown(8)
+auto lo
+iface lo inet loopback
 	
-	auto enp4s0
-	iface enp4s0 inet static
-	address 192.168.10.205
-	gateway 192.168.10.10
-	netmask 255.255.255.0
+auto enp4s0
+iface enp4s0 inet static
+address 192.168.10.205
+gateway 192.168.10.10
+netmask 255.255.255.0
 ```
 
 增加需要修改的静态IP即可。
-```
+```shell
 root@zzb-System-Product-Name:/# /etc/init.d/networking restart 
 [ ok ] Restarting networking (via systemctl): networking.service.
 root@zzb-System-Product-Name:/# ip addr flush dev enp4s0; ifdown enp4s0; ifup enp4s0
@@ -63,10 +64,10 @@ RTNETLINK answers: Cannot assign requested address
 
 ##二、修改DNS配置
 
-```
+```shell
 vi /etc/resolv.conf
 
---增加DNS地址即可
+# 增加DNS地址即可
 nameserver 192.168.10.10
 
 resolvconf -u (关于 resolvconf 服务更多信息，可以用man查看：man resolvconf )

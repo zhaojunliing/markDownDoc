@@ -2,7 +2,7 @@
 ## 一、创建Shell脚本
 新建一个tomcat.sh文件，输入以下内容：
 
-```
+```shell
 #!/bin/bash
 . /etc/profile
 tomcatPath="/usr/local/tomcat"
@@ -36,7 +36,7 @@ Neither the JAVA_HOME nor the JRE_HOME environment variable is defined At least 
 ```
 ## 二、修改文件权限
 要让脚本可以执行，当然要把文件设置为可执行文件了。
-```
+```shell
 chmod 777 tomcat.sh
 ```
 ## 三、建立定时任务

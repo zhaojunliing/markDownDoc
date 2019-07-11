@@ -2,7 +2,7 @@
 ---
 ## 一、修改系统环境变量
 ### 1、修改etc/profile文件，配置代理上网
-```
+```shell
 vi /etc/profile
 
 http_proxy=http://192.168.10.120:38080/
@@ -17,14 +17,14 @@ export all_proxy
 执行 source /etc/profile使刚才的修改生效。
 
 ### 2、修改/etc/yum.conf文件，配置yum代理上网
-```
+```shell
 vi /etc/yum.conf
 
 proxy=http://admin:admin@192.168.10.120:38080
 ```
 
 ##二、测试配置是否成功
-```
+```shell
 [root@localhost ~]# wget www.baidu.com
 --2019-06-16 09:52:40--  http://www.baidu.com/
 Resolving www.baidu.com... 61.135.169.121, 61.135.169.125
@@ -44,22 +44,23 @@ Saving to: “index.html.2”
 出现上面的页面说明配置成功！
 
 ##三、修改阿里云yum源
-```
+```shell
 cd /etc/yum.repos.d
 wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-6.repo
 ```
 
 ##四、处理缓存
-```
-yum clean all  	--清空缓存
+```shell
+yum clean all  	#清空缓存
 
-yum makecache	--生成缓存
+yum makecache	#生成缓存
 
-yum update 		--更新
+yum update 		#更新
 ```
 
 ##五、yum常用命令
-```
-yum list|grep java
-yum install -y unzip zip
+
+```shell
+yum list|grep java			#查找java相关的包
+yum install -y unzip zip	#安装unzip,zip包，无需确认
 ```
