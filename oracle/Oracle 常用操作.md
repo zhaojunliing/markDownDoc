@@ -1,6 +1,6 @@
 ### Oracle 常用操作
 #### 创建表空间及用户
-```
+```sql
 /*第1步：创建临时表空间,一般不需要创建,使用系统temp就行,此步骤可以略过  */
 create temporary tablespace xxx_temp  --临时表空间名称
 tempfile '/u02/oradata/orcl//xxx_temp .dbf'  --临时表空间文件存储位置
@@ -45,7 +45,7 @@ exp XXX/XXX@localhost:1521/orcl file=d:/file_name_YYYYMMdd00.dmp owner="XXX"
 ![导入表结构](https://raw.githubusercontent.com/zhaojunliing/markDownDoc/master/youDaoYun/Oracle/2018-07-17_132220.png)
 
 #### 导入用户表数据
-```
+```sql
 -- 禁用触发器后再进行该操作,导入成功后需要重新启用触发器
 -- 只导入表数据
 imp YYY/YYY@localhost:1521/orcl file=e:/dbbak/file_name_YYYYMMdd00.dmp fromuser='XXX' touser='YYY' data_only=y
@@ -55,7 +55,7 @@ imp YYY/YYY@localhost:1521/orcl file=e:/dbbak/file_name_YYYYMMdd00.dmp data_only
 ```
 
 #### 数据库表空间操作
-```
+```sql
 drop tablespace ZDCLBX including contents and datafiles;  --删除表空间及数据文件
 select tablespace_name,sum(bytes)/1024/1024/1024 as GB from dba_free_space group by tablespace_name;  -- 查询表空间剩余量
 select tablespace_name,sum(bytes)/1024/1024/1024 as GB from DBA_DATA_FILES group by tablespace_name;  -- 查询表空间总量
@@ -85,18 +85,18 @@ ALTER DATABASE DATAFILE 'D:\ORACLE\PRODUCT\10.2.0\ORADATA\EDWTEST\APP02.DBF' RES
 ```
 
 #### 数据库表空间大小和数据文件位置查询
-```
+```sql
 select tablespace_name,file_id,bytes/1024/1024/1024,file_name from dba_data_files order by file_id;
 ```
 
 #### 查询当前用户有多少表
-```
+```sql
 select count(*) from user_tables；
 
 select wm_concat(object_name) from user_objects where lower(object_type)='table';  --查询当前用户有多上张表
 ```
 #### 查看连接用户
-```
+```sql
 select count(*) from v$process; --当前的数据库连接数  
   
 select value from v$parameter where name ='processes'; --数据库允许的最大连接数  
@@ -115,13 +115,13 @@ select count(*) from v$session where status='ACTIVE'; --并发连接数
 show parameter processes; --最大连接 
 ```
 #### 清空表数据
-```
+```sql
 truncate table table_name; --速度快，原理是删除表后重建表，正在使用的时候可能没办法删除成功。
 delete from table_name;  --普通删除数据表操作
 ```
 
 #### 禁用Oracle约束条件和触发器
-```
+```sql
 alter table table_name enable constraint constraint_name;  --启用外键约束
 alter table table_name disable constraint constraint_name;  --禁用外键约束
 select 'alter table '||table_name||' enable constraint '||constraint_name||';' from user_constraints where constraint_type='R';
@@ -129,7 +129,7 @@ select 'alter table '||table_name||' disable constraint '||constraint_name||';' 
 ```
 
 #### 查询连接的用户并杀死连接
-```
+```sql
 --查看链接的用户session
 select username,sid,serial# from v$session;
 --杀死链接的用户
@@ -139,7 +139,7 @@ SELECT 'alter system kill session '||''''||sid||','||serial#||''''||';' username
 ```
 
 #### 删除用户操作
-```
+```sql
 以system用户登录，查找需要删除的用户：
 
 --查找用户
@@ -162,7 +162,7 @@ drop tablespace LYK including contents and datafiles cascade constraint;
 ```
 
 #### 创建db_link
-```
+```sql
 两种创建db_link的sql
 create database link HCQS
    connect to name identified by HCQS  using '
@@ -182,15 +182,26 @@ create database link HCQS
 ```
 
 #### oracle查询数据总量
-```
+```sql
 select t.table_name,t.num_rows from user_tables t ORDER BY NUM_ROWS DESC; -- 查询当前用户的数据总量
 select t.table_name,t.num_rows from user_tables@dblink t ORDER BY NUM_ROWS DESC; --查询dblink的数据总量
 exec dbms_stats.gather_schema_stats('用户名'); -- 用户下所有表生成统计数据
 exec dbms_stats.gather_table_stats(user,'表名'); -- 生成指定表统计数据
 ```
 
-#### 死锁查询
+#### 查询表创建时间
+
+```sql
+SELECT t.object_name   as 表名,
+       t.created       as 创建时间,
+       t.last_ddl_time as DDL操作时间
+FROM user_objects t
+where t.object_type = 'TABLE'
 ```
+
+#### 死锁查询
+
+```sql
 --共享锁：Share；排他锁：Exclusive；行共享锁：Row-S；行排他锁：Row-X
 select   V$SESSION.sid,v$session.SERIAL#,v$process.spid,   
   rtrim(object_type)   object_type,rtrim(owner)   ||   '.'   ||   object_name   object_name,   
