@@ -50,7 +50,7 @@ gateway 192.168.10.10
 netmask 255.255.255.0
 ```
 
-增加需要修改的静态IP即可。
+增加需要修改的静态IP即可，修改的IP地址不可与当前地址一样，否则无法修改成功。。
 ```shell
 root@zzb-System-Product-Name:/# /etc/init.d/networking restart 
 [ ok ] Restarting networking (via systemctl): networking.service.
@@ -67,9 +67,11 @@ RTNETLINK answers: Cannot assign requested address
 ```shell
 vi /etc/resolv.conf
 
-# 增加DNS地址即可
+# 增加DNS地址
 nameserver 192.168.10.10
-
-resolvconf -u (关于 resolvconf 服务更多信息，可以用man查看：man resolvconf )
+# 刷新DNS
+resolvconf -u
+# 重启网络
 /etc/init.d/networking restart 
+# (关于 resolvconf 服务更多信息，可以用man查看：man resolvconf )
 ```

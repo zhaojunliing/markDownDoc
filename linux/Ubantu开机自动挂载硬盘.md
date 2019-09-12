@@ -45,7 +45,7 @@ sudo vim /etc/fstab
 加入：
 
 ```shell
-UUID=11263962-9715-473f-9421-0b604e895aaa /data xfs defaults 0 1
+UUID=11263962-9715-473f-9421-0b604e895aaa /data ext4 defaults 0 1
 ```
 
 注：<fs spec> <fs file> <fs vfstype> <fs mntops> <fs freq> <fs passno>
