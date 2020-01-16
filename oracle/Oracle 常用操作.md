@@ -181,7 +181,24 @@ create database link HCQS
   using '10.96.2.32:1521/oraqsdb';
 ```
 
+#### 创建DBMS_JOB
+
+```sql
+
+declare
+  jobno number;
+begin
+  dbms_job.submit(jobno,
+                  'begin p_stat_query_count; end;',
+                  sysdate,
+                  'TRUNC(SYSDATE + 1) + (0*60+10)/(24*60)');
+  commit;
+end;
+
+```
+
 #### oracle查询数据总量
+
 ```sql
 select t.table_name,t.num_rows from user_tables t ORDER BY NUM_ROWS DESC; -- 查询当前用户的数据总量
 select t.table_name,t.num_rows from user_tables@dblink t ORDER BY NUM_ROWS DESC; --查询dblink的数据总量
