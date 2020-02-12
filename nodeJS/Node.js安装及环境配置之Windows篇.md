@@ -106,3 +106,32 @@ npm install express -g     # -g是全局安装的意思
 ```
 
 ![img](./assets/2267589-fb7a6e61c1b99541-1581133431580.png)
+
+
+
+## 七、遇到的坑
+
+### node-sass无法下载导致构建失败
+
+由于node-sass的源使用的是Github上面的，经常无法访问，我们构建的时候需要单独设置node-sass的下载地址。
+
+```shell
+# linux
+SASS_BINARY_SITE=https://npm.taobao.org/mirrors/node-sass/ npm install node-sass
+# window
+set SASS_BINARY_SITE=https://npm.taobao.org/mirrors/node-sass&& npm install node-sass
+
+```
+
+### 有些依赖无法下载导致构建失败
+
+由于npm源访问慢的问题，有些源可能会无法下载，改用淘宝的npm源即可解决。
+
+```shell
+# 设置为淘宝的镜像源
+npm config set registry https://registry.npm.taobao.org
+# 设置为官方镜像源
+npm config set registry https://registry.npmjs.org
+
+```
+
