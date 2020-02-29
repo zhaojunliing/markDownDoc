@@ -30,6 +30,8 @@ docker start gitlab
 
 ## 升级
 
+> 查看版本号命令：cat /opt/gitlab/embedded/service/gitlab-rails/VERSION
+
 ### 1、小版本升级
 
 （例如从 8.8.2 升级到 8.8.3）， 参照官方的说明， 将原来的容器停止， 然后删除：
@@ -51,10 +53,6 @@ docker run -d --hostname 192.168.10.159 --publish 543:443 --publish 81:80 --publ
 ```
 
 ### 2、大版本升级
-（例如从 8.7.x 升级到 8.8.x）用上面的操作有可能会出现错误， 如果出现错误可以尝试登录到容器内部， 可以用 `docker exec` ， 也可以用 ssh ， 依次执行下面的命令：
+​	请按照gitlab官网提供的版本升级版本进行升级。
 
-```shell
-gitlab-ctl reconfigure
-gitlab-ctl restart
-```
-
+https://docs.gitlab.com/ee/policy/maintenance.html#upgrade-recommendations
