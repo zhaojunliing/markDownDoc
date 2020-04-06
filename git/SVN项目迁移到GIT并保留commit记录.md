@@ -58,7 +58,7 @@ git remote -v
 如果关联有误，可以删除关联
 
 ```shell
-git remote rm orign
+git remote rm origin
 ```
 
 ### 4. push代码到远端
