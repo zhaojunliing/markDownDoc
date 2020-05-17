@@ -72,7 +72,7 @@ systemctl enable firewalld
 ```
 4.停止并禁用开机启动
 ```shell
-sytemctl disable firewalld
+systemctl disable firewalld
 ```
 5.重启防火墙
 ```shell
