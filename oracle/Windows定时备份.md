@@ -6,7 +6,7 @@
 echo ================================================
 echo  Windows环境下Oracle数据库的自动备份脚本
 echo  1. 使用当前日期命名备份文件。
-echo  2. 自动删除7天前的备份。
+echo  2. 自动删除30天前的备份。
 echo ================================================
 ::以“YYYYMMDD”格式取出当前时间。
 set BACKUPDATE=%date:~0,4%%date:~5,2%%date:~8,2%
@@ -25,17 +25,21 @@ if "%CURTIME%"==" 9" set CURTIME=09
 set CURTIME=%CURTIME%%time:~3,2%%time:~6,2%
 
 ::设置用户名、密码和要备份的数据库。
-set USER=test
-set PASSWORD=test
-set DATABASE=192.168.10.10:1521/orcl
+set USER=test_2020
+set PASSWORD=test_2020
+set DATABASE=192.168.10.113:1521/orcl
+set BACKROOTPATH=D:\databak
+set DAYS=30
+
+
 ::set nls_lang=american_america.al32utf8
 ::创建备份目录。
-if not exist "D:\backup\data\%BACKUPDATE% "     mkdir D:\backup\data\%BACKUPDATE%
-if not exist "D:\backup\log\%BACKUPDATE% "      mkdir D:\backup\log\%BACKUPDATE%
-set DATADIR=D:\backup\data\%BACKUPDATE%
-set LOGDIR=D:\backup\log\%BACKUPDATE%
-set DELDATADIR=D:\backup\data
-set DELLOGDIR=D:\backup\log
+if not exist "%BACKROOTPATH%\data\%BACKUPDATE% "     mkdir %BACKROOTPATH%\data\%BACKUPDATE%
+if not exist "%BACKROOTPATH%\log\%BACKUPDATE% "      mkdir %BACKROOTPATH%\log\%BACKUPDATE%
+set DATADIR=%BACKROOTPATH%\data\%BACKUPDATE%
+set LOGDIR=%BACKROOTPATH%\log\%BACKUPDATE%
+set DELDATADIR=%BACKROOTPATH%\data
+set DELLOGDIR=%BACKROOTPATH%\log
 exp %USER%/%PASSWORD%@%DATABASE%  file=%DATADIR%\%USER%_%BACKUPDATE%%CURTIME%.dmp log=%LOGDIR%\log_%BACKUPDATE%%CURTIME%.log
 echo 数据库文件备份成功，所在目录为: %DATADIR%
 echo 正在查找旧备份文件创建时间...
@@ -60,19 +64,19 @@ if %dataCount% equ 1 goto end
 if %logCount% equ 1 goto end
 ::删除文件、删除空文件夹
 :beginCleandata
-forfiles /p "%DELDATADIR%" /s /m *.* /d -30 /c "cmd /c del @path"
+forfiles /p "%DELDATADIR%" /s /m *.* /d -%DAYS% /c "cmd /c del @path"
 for /f "tokens=*" %%a in ('dir /b /ad /s "%DELDATADIR%"^|sort /r') do rd "%%a"
 goto iscleanlog
 :beginCleanlog
-forfiles /p "%DELLOGDIR%" /s /m *.* /d -30 /c "cmd /c del @path"
+forfiles /p "%DELLOGDIR%" /s /m *.* /d -%DAYS% /c "cmd /c del @path"
 for /f "tokens=*" %%a in ('dir /b /ad /s "%DELLOGDIR%"^|sort /r') do rd "%%a"
 echo 旧备份文件删除成功!
-pause
+::pause
 exit
 :end
 echo 无旧备份文件。
 echo 执行成功。
-pause
+::pause
 ```
 
 摘抄自博客 https://blog.csdn.net/wht21888/article/details/78419917
