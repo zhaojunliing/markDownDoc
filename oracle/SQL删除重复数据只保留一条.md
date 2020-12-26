@@ -45,7 +45,7 @@ select * from vitae a
 update tableName set [Title]=Right([Title],(len([Title])-1)) where Title like '村%'
 ````
 
-###7.消除一个字段的右边的第一位：
+### 7.消除一个字段的右边的第一位：
 
 ```sql
 update tableName set [Title]=left([Title],(len([Title])-1)) where Title like '%村'
