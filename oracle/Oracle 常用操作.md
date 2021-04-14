@@ -40,9 +40,18 @@ grant connect,resource,dba to XXX;
 exp XXX/XXX@localhost:1521/orcl file=d:/file_name_YYYYMMdd00.dmp owner="XXX"
 ```
 #### 导入用户表结构
-工具--导入表
+1、工具--导入表
 
 ![导入表结构](https://raw.githubusercontent.com/zhaojunliing/markDownDoc/master/youDaoYun/Oracle/2018-07-17_132220.png)
+
+2、导入表结构的时候视图存在空行问题 
+
+在导出的表结构中增加 `SET SQLBLANKLINES ON`即可
+
+```sql
+set define off
+SET SQLBLANKLINES ON
+```
 
 #### 导入用户表数据
 ```sql
