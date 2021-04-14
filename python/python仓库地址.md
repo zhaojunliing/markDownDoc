@@ -12,5 +12,7 @@ https://pypi.tuna.tsinghua.edu.cn/simple/
 http://pypi.mirrors.ustc.edu.cn/simple/
 
 https://mirrors.aliyun.com/pypi/simple/
+
+https://mirror.baidu.com/pypi/simple
 ```
 
