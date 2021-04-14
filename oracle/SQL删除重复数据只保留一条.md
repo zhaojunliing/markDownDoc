@@ -12,8 +12,8 @@ select * from people
 
 ```sql
 delete from people
-	where peopleName in (select peopleName from people group by peopleName having count(peopleName) > 1) 
-	and peopleId not in (select min(peopleId) from people group by peopleName having count(peopleName)>1) 
+	where peopleId in (select peopleId from people group by peopleId having count(peopleId) > 1) 
+	and rowid not in (select min(rowid) from vitae group by peopleId having count(*)>1)
 ```
 
 ### 3、查找表中多余的重复记录（多个字段） 
