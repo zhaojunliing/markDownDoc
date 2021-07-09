@@ -100,9 +100,14 @@ select tablespace_name,file_id,bytes/1024/1024/1024,file_name from dba_data_file
 
 #### 查询当前用户有多少表
 ```sql
+--查询当前用户有多张表
 select count(*) from user_tables；
 
-select wm_concat(object_name) from user_objects where lower(object_type)='table';  --查询当前用户有多上张表
+--查询当前用户表
+select wm_concat(object_name) from user_objects where lower(object_type)='table';  
+
+--查询对象最后修改时间
+select object_name, created,last_ddl_time from user_objects
 ```
 #### 查看连接用户
 ```sql
@@ -119,7 +124,7 @@ SELECT osuser, a.username,cpu_time/executions/1000000||'s', b.sql_text,machine f
   
 select count(*) from v$session; --当前的session连接数  
   
-select count(*) from v$session where status='ACTIVE'; --并发连接数  
+   select count(*) from v$session where status='ACTIVE'; --并发连接数  
   
 show parameter processes; --最大连接 
 ```
