@@ -16,7 +16,7 @@ nginx下载地址：https://nginx.org/download/
 
 下载“nginx-1.9.9.tar.gz”，移动到/usr/local/下。
 
-```
+```shell
 ## 解压
 tar -zxvf nginx-1.9.9.tar.gz
 
