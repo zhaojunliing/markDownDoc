@@ -101,7 +101,7 @@ select tablespace_name,file_id,bytes/1024/1024/1024,file_name from dba_data_file
 #### 查询当前用户有多少表
 ```sql
 --查询当前用户有多张表
-select count(*) from user_tables；
+select count(*) from user_tables;
 
 --查询当前用户表
 select wm_concat(object_name) from user_objects where lower(object_type)='table';  
@@ -229,6 +229,28 @@ SELECT t.object_name   as 表名,
 FROM user_objects t
 where t.object_type = 'TABLE'
 ```
+
+#### 删除数据回滚
+
+1、需要看 undo_retention 的设置，默认为 900s，也就是 15 分钟。
+
+2、查看 UNDO 中 5 分钟前数据是否还在
+
+```sql
+select * from 用户.表 as of timestamp to_timestamp('2021-09-12 10:30:00', 'yyyy-mm-dd hh24:mi:ss');
+```
+
+3、防止 UNDO 中数据被覆盖，先创建一张备份表将5分钟前数据备份
+
+```sql
+create table 用户.表_20201217
+as
+select * from 用户.表 as of timestamp to_timestamp('2021-09-12 10:30:00', 'yyyy-mm-dd hh24:mi:ss');
+```
+
+4、用备份表和原表比对数据，将误删的数据插入原表中
+
+> 注意：此方法仅适用于 delete 等 DML 误删误操作恢复，DDL 不支持！
 
 #### 死锁查询
 

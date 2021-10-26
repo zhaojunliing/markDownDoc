@@ -15,14 +15,10 @@ Docker-Compose项目由Python编写，调用Docker服务提供的API来对容器
 
 ![img](https://img2018.cnblogs.com/blog/1144139/201909/1144139-20190919094410592-979215055.png)
 
- 
-
- 
-
  　安装
 
 ```
-apt ``install` `python-pip``pip ``install` `docker-compose
+apt install python-pip pip install docker-compose
 ```
 
  　PS：centos使用命令`yum -y install python-pip`安装pip
