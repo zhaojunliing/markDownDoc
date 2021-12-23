@@ -25,6 +25,16 @@ temporary tablespace temp;
 
 /*第4步：给用户授予权限  */
 grant connect,resource,dba to XXX;  
+
+---------------------------------------------------
+--创建bigfile表空间，最大32TB
+create bigfile tablespace testsimis
+logging
+datafile '/u02/oradata/orcl/testsimis.dbf' 
+size 1G 
+autoextend on
+next 1G maxsize unlimited  --自动增长文件大小及最大空间
+extent management local;
 ```
 
 #### 导出用户表结构
@@ -124,7 +134,7 @@ SELECT osuser, a.username,cpu_time/executions/1000000||'s', b.sql_text,machine f
   
 select count(*) from v$session; --当前的session连接数  
   
-   select count(*) from v$session where status='ACTIVE'; --并发连接数  
+select count(*) from v$session where status='ACTIVE'; --并发连接数  
   
 show parameter processes; --最大连接 
 ```
@@ -209,6 +219,32 @@ begin
   commit;
 end;
 
+```
+
+## 存储过程执行
+
+```sql
+--方法一
+DECLARE
+    r_codes varchar2(4000);
+    r_msg varchar2(4000);
+    r_data varchar2(4000);
+BEGIN
+    p_video_recg_pro_viola_count(r_codes,r_msg,r_data,'11111','2021-11-18');
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20101,SQLERRM);
+END;
+/
+
+--方法二
+--sql命令行执行
+var r_codes varchar2;
+var r_msg varchar2;
+var r_data varchar2;
+call p_video_recg_pro_viola_count(:r_codes,:r_msg,:r_data,'11111','2021-11-18');
+
+--call可使用exec代替
 ```
 
 #### oracle查询数据总量

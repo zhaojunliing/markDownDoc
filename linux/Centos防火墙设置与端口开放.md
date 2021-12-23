@@ -27,7 +27,8 @@ iptables -A INPUT -p tcp --dport 8080 -j ACCEPT
 ```
 （2）保存并重启防火墙
 ```shell
-/etc/rc.d/init.d/iptables save/etc/init.d/iptables restart
+/etc/rc.d/init.d/iptables save
+/etc/init.d/iptables restart
 ```
 4.打开49152~65534之间的端口
 ```shell
