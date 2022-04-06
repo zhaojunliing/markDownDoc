@@ -55,9 +55,9 @@ impdp system/oracle directory=dir_dp dumpfile=expdp_db01_tspache.dmp logfile=imp
 
 
 ```shell
-expdp wf056_zz/wf056_zz@192.168.20.113:1521/orcl schemas=wf056_zz directory=dir_dp dumpfile =wf056_zz.dmp logfile=wf056_zz.log;
+expdp test01/test01@192.168.20.113:1521/orcl schemas=test01 directory=dir_dp dumpfile =test01.dmp logfile=test01.log;
 
-impdp wf056_zz/wf056_zz@192.168.20.113:1521/orcl schemas=wf056_zz remap_schema=wf056_zz:wf056_zz directory=dir_dp dumpfile =wf056_zz.dmp logfile=impdp_wf056_zz.log;
+impdp test02/test02@192.168.20.113:1521/orcl schemas=test01 remap_schema=test01:test02  remap_tablespace=test_space_01:test_space_02 directory=dir_dp dumpfile =test01.dmp logfile=impdp_test02.log;
 ```
 
 ## 七、导出指定表数据

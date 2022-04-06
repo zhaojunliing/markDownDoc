@@ -86,7 +86,11 @@ select tablespace_name,file_name,autoextensible from dba_data_files where autoex
 ALTER TABLESPACE app_data ADD DATAFILE 'D:\ORACLE\PRODUCT\10.2.0\ORADATA\EDWTEST\APP03.DBF' SIZE 50M;
  
 方法2：新增数据文件，并且允许数据文件自动增长
-ALTER TABLESPACE app_data ADD DATAFILE 'D:\ORACLE\PRODUCT\10.2.0\ORADATA\EDWTEST\APP04.DBF' SIZE 50M AUTOEXTEND ON NEXT 5M MAXSIZE 100M;
+alter tablespace app_data
+add datafile 'D:\ORACLE\PRODUCT\10.2.0\ORADATA\EDWTEST\APP03.DBF'
+size 1g
+autoextend on
+next 300m maxsize unlimited ;
  
 方法3：允许已存在的数据文件自动增长
 ALTER DATABASE DATAFILE 'D:\ORACLE\PRODUCT\10.2.0\ORADATA\EDWTEST\APP03.DBF' AUTOEXTEND ON NEXT 5M MAXSIZE 100M;
@@ -290,7 +294,7 @@ select * from 用户.表 as of timestamp to_timestamp('2021-09-12 10:30:00', 'yy
 
 #### 死锁查询
 
-```sql
+```n sql
 --共享锁：Share；排他锁：Exclusive；行共享锁：Row-S；行排他锁：Row-X
 select   V$SESSION.sid,v$session.SERIAL#,v$process.spid,   
   rtrim(object_type)   object_type,rtrim(owner)   ||   '.'   ||   object_name   object_name,   
@@ -342,6 +346,23 @@ select   V$SESSION.sid,v$session.SERIAL#,v$process.spid,
 select sess.sid, sess.serial#, lo.oracle_username, lo.os_user_name, ao.object_name, lo.locked_mode 
 from v$locked_object lo, dba_objects ao, v$session sess 
 where ao.object_id = lo.object_id and lo.session_id = sess.sid; 
+
+--查看锁表进程的具体sql
+select l.session_id sid,
+       s.serial#,
+       l.locked_mode,
+       l.oracle_username,
+       s.user#,
+       l.os_user_name,
+       s.machine,
+       s.terminal,
+       a.sql_text,
+       a.action
+  from v$sqlarea a, v$session s, v$locked_object l
+ where l.session_id = s.sid
+   and s.prev_sql_addr = a.address
+ order by sid, s.serial#;
+
 
 --杀掉锁表进程： 
 --如有記錄則表示有lock，記錄下SID, serial# ，將記錄的ID替換下面的1143,24155，即可解除LOCK 

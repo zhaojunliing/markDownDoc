@@ -5,7 +5,7 @@
 
 ```sql
 select * from people 
-	where peopleId in (select peopleId from people group by peopleId having count(peopleId) > 1) 
+	where t_train_plan_total in (select peopleId from people group by peopleId having count(peopleId) > 1) 
 ```
 
 ### 2、删除表中多余的重复记录，重复记录是根据单个字段（peopleId）来判断，只留有rowid最小的记录 

@@ -66,5 +66,16 @@ ffmpeg -i in.mp4 -filter:v "crop=80:60:200:100" -c:a copy out.mp4
 ffmpeg -i in.mp4 -filter:v "crop=in_w/2:in_h/2:in_w/2:in_h/2" -c:a copy out.mp4
 // 截去底部40像素高度
 ffmpeg -i in.mp4 -filter:v "crop=in_w:in_h-40" -c:a copy out.mp4
+
+
+ffmpeg  -i C:\Users\zhaojunli\Desktop\mda-ma7rvnsg4qjih3f7.mp4  -ss 0 -to 38.4 C:\Users\zhaojunli\Desktop\1111.mp4 -y
+
+
+ffmpeg  -i C:\Users\zhaojunli\Desktop\mda-ma7rvnsg4qjih3f7.mp4 -filter:v "crop=1:264:528:466" -c:a copy C:\Users\zhaojunli\Desktop\222.mp4
+
+ffmpeg –i C:\Users\zhaojunli\Desktop\mda-ma7rvnsg4qjih3f7.mp4 –f image2 -t 30 image-%3d.jpg
+
+
+264 730
 ```
 
