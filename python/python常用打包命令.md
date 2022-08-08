@@ -20,5 +20,9 @@ docker build -t fhtbx .
 pip3 install -i https://pypi.mirrors.ustc.edu.cn/simple/  cx-Oracle==8.0.1
 pip3 install -i https://pypi.mirrors.ustc.edu.cn/simple/  SQLAlchemy==1.3.20
 
+pip3 install -i https://pypi.douban.com/simple/ pywin32
+
+pip3 install -i https://pypi.douban.com/simple/  pypiwin32
+
 ```
 

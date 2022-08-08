@@ -39,6 +39,18 @@ select * from vitae a
 	and rowid not in (select min(rowid) from vitae group by peopleId,seq having count(*)>1)
 ```
 
+```sq
+select *
+from (select t.*, row_number() over (partition by traincode order by rownum) rn
+      from t_plan_train t
+      where t.is_pass = '1'
+        and t.excel_type = '12'
+        and t.id_plan_cycle = 'fad585d652f04458befd996a5a069411')
+where rn = 1
+```
+
+
+
 ### 6.消除一个字段的左边的第一位：
 
 ```sql

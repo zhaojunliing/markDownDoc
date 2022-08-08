@@ -97,5 +97,9 @@ drop directory dumpdir ;
 select dbms_metadata.get_ddl('TABLESPACE','TEST') from dual;
 --查看jobs
 select * from dba_datapump_jobs;
+--删除1
+alter table 表名 DROP PARTITION 表中分区的名称;
+--删除2
+alter table 表名 TRUNCATE PARTITION 表中分区的名称;
 ```
 

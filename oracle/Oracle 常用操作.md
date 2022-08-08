@@ -79,6 +79,21 @@ drop tablespace ZDCLBX including contents and datafiles;  --删除表空间及�
 select tablespace_name,sum(bytes)/1024/1024/1024 as GB from dba_free_space group by tablespace_name;  -- 查询表空间剩余量
 select tablespace_name,sum(bytes)/1024/1024/1024 as GB from DBA_DATA_FILES group by tablespace_name;  -- 查询表空间总量
 select tablespace_name,file_name,autoextensible from dba_data_files where autoextensible='YES';  -- 查询自增表空间
+select tablespace_name,sum(bytes)/1024/1024/1024 as GB from DBA_TEMP_FILES group by tablespace_name;   -- 查询临时表空间总量
+
+
+SELECT a.tablespace_name "表空间名",
+        total "表空间大小",
+        free "表空间剩余大小",
+        (total - free) "表空间使用大小",
+            total / (1024 * 1024 * 1024 ) "表空间大小(M)",
+            free / (1024 * 1024 * 1024 ) "表空间剩余大小(M)",
+            (total - free) / (1024 * 1024 * 1024 ) "表空间使用大小(M)",
+            round((total - free) / total, 4) * 100 "使用率 %"
+FROM
+    (SELECT tablespace_name, SUM(bytes) free FROM dba_free_space GROUP BY tablespace_name) a ,
+    (SELECT tablespace_name, SUM(bytes) total FROM dba_data_files GROUP BY tablespace_name) b
+WHERE a.tablespace_name = b.tablespace_name;
 
 
 -- 表空间数据文件操作
@@ -137,6 +152,8 @@ startup;--重启数据库
 SELECT osuser, a.username,cpu_time/executions/1000000||'s', b.sql_text,machine from v$session a, v$sqlarea b where a.sql_address =b.address;  --查看当前有哪些用户正在使用数据  
   
 select count(*) from v$session; --当前的session连接数  
+
+select t.username,count(*) from v$session t group by t.username ; --当前用户占用的session连接数  
   
 select count(*) from v$session where status='ACTIVE'; --并发连接数  
   
