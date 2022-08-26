@@ -67,3 +67,13 @@ vim /etc/rc.d/rc.local
 ##添加nginx开机启动
 /usr/local/nginx/sbin/nginx
 ```
+
+**====================== 分割线 ====================**
+
+3、常用命令
+
+```shell
+nginx -s stop    #关闭nginx
+nginx -s reload  #重启nginx
+```
+
