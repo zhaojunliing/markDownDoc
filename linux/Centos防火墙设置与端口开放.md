@@ -72,6 +72,7 @@ systemctl stop firewalld
 systemctl enable firewalld
 ```
 4.停止并禁用开机启动
+
 ```shell
 systemctl disable firewalld
 ```
@@ -84,6 +85,7 @@ firewall-cmd --reload
 systemctl status firewalld或者 firewall-cmd --state
 ```
 7.查看版本
+
 ```shell
 firewall-cmd --version
 ```
@@ -100,6 +102,7 @@ firewall-cmd --get-active-zones
 firewall-cmd --get-zone-of-**interface**=eth0
 ```
 11.拒绝所有包
+
 ```shell
 firewall-cmd --panic-on
 ```
@@ -113,11 +116,11 @@ firewall-cmd --query-panic
 ```
 14.将接口添加到区域(默认接口都在public)
 ```shell
-firewall-cmd --zone=public --add-**interface**=eth0(永久生效再加上 --permanent 然后reload防火墙
+firewall-cmd --zone=public --add-interface=eth0(永久生效再加上 --permanent 然后reload防火墙
 ```
 15.设置默认接口区域
 ```shell
-firewall-cmd --set-**default**-zone=public(立即生效，无需重启)
+firewall-cmd --set-default-zone=public(立即生效，无需重启)
 ```
 16.更新防火墙规则
 ```shell

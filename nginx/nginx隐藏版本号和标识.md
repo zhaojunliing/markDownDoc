@@ -37,7 +37,7 @@ server_tokens off;
 
 ### 2、src/http包下 ngx_http_special_response.c 和 ngx_http_header_filter_module.c 
 
-ngx_http_special_response.c 大约49行
+ngx_http_header_filter_module.c  大约49行
 
 ```shell
 # 改动前
@@ -52,7 +52,7 @@ ngx_http_special_response.c 大约49行
 50 static u_char ngx_http_server_full_string[] = "Server: " NGINX_VER CRLF;
 51 static u_char ngx_http_server_build_string[] = "Server: " NGINX_VER_BUILD CRLF;
 ```
-ngx_http_header_filter_module.c  大约35行
+ngx_http_special_response.c 大约35行
 
 ```shell
 # 改动前
