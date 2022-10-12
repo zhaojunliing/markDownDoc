@@ -49,7 +49,7 @@ docker pull gitlab/gitlab-ce:latest
   还使用原来的运行命令运行：
 
 ```shell
-docker run -d --hostname 192.168.10.159 --publish 543:443 --publish 81:80 --publish 222:22 --name gitlab --restart always --volume /srv/gitlab/config:/etc/gitlab --volume /srv/gitlab/logs:/var/log/gitlab --volume /srv/gitlab/data:/var/opt/gitlab     gitlab/gitlab-ce
+docker run -d --hostname 192.168.20.111 --publish 543:443 --publish 81:80 --publish 222:22 --name gitlab --restart always --volume /disk/gitlab/config:/etc/gitlab --volume /disk/gitlab/logs:/var/log/gitlab --volume /disk/gitlab/data:/var/opt/gitlab     gitlab/gitlab-ce
 ```
 
 ### 2、大版本升级
