@@ -241,3 +241,12 @@ arp -a
 查询路由跳数
 traceroute X:X:X:X
 ```
+
+#### mount
+```shell
+mount -t cifs //ip/remote /workspace/remote -o username=xxxxxxxx,password=xxxxxxx,rw,dir_mode=0777,file_mode=0777,vers=2.1
+
+针对ntfs盘无法在linux下执行软连接
+mount -t cifs //ip/remote /workspace/remote -o username=xxxxxxxx,password=xxxxxxx,rw,dir_mode=0777,file_mode=0777,vers=2.1,mfsymlinks
+```
+
