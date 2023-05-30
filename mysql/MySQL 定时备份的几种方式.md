@@ -9,6 +9,9 @@
 ```
 #MySQLdump常用
 mysqldump -u root -p --databases 数据库1 数据库2 > xxx.sql
+
+#整库备份
+mysqldump -u root -p --all-databases > xxx.sql
 ```
 
 ## mysqldump常用操作示例

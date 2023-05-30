@@ -229,7 +229,7 @@ create database link HCQS
 #### 创建DBMS_JOB
 
 ```sql
-
+--无参
 declare
   jobno number;
 begin
@@ -238,6 +238,28 @@ begin
                   sysdate,
                   'TRUNC(SYSDATE + 1) + (0*60+10)/(24*60)');
   commit;
+end;
+
+--有参
+declare
+    jobno number;
+begin
+    dbms_job.submit(jobno,
+                    'DECLARE
+    r_codes varchar2(4000);
+    r_msg varchar2(4000);
+    r_data varchar2(4000);
+    r_cur_data sys_refcursor;
+BEGIN
+    p_train_day_create(r_codes,r_msg,r_data,r_cur_data,''11111'','''');
+    commit;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20101,SQLERRM);
+END;',
+                    sysdate,
+                    'sysdate+5/(24*60)');
+    commit;
 end;
 
 ```

@@ -8,12 +8,12 @@
 
 3、配置环境变量
 
-4、以管理员身份打开cmd，执行安装命令
+4、以**管理员身份**打开cmd，执行安装命令
 
 （1）初始化mysql服务,并记录生成的用户密码root的随机密码
 
 ```shell
-mysqld.exe --initialize --console
+mysqld --initialize --user=mysql --console
 ```
 
 （2）安装mysql服务
