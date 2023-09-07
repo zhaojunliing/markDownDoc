@@ -537,7 +537,7 @@ block_size根据实际情况选择，一旦建库无法修改，默认8K。
 
 <img src="assets/640-164015806763058.webp" alt="Image" style="zoom:67%;" />
 
-字符集根据需要进行选择，默认AL32UTF8。
+字符集根据需要进行选择，默认AL32UTF8，我们使用ZHS16GBK编码。
 
 <img src="assets/640-164015806763059.webp" alt="Image" style="zoom:67%;" />
 

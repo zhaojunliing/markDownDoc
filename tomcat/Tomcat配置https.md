@@ -43,8 +43,9 @@ keytool -list -keystore D:\home\tomcat.keystore
 ```
 (tomcat是你设置服务器端的证书名)。
 
-##4、让客户端信任服务器证书
+## 4、让客户端信任服务器证书
 由于是双向SSL认证，客户端也要验证服务器证书，因此，必须把服务器证书添加到浏览的“受信任的根证书颁发机构”。由于不能直接将keystore格式的证书库导入，必须先把服务器证书导出为一个单独的CER文件，使用如下命令：
+
 ```
 keytool -keystore D:\home\tomcat.keystore -export -alias tomcat -file D:\home\tomcat.cer
 ```

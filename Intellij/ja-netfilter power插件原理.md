@@ -1,0 +1,194 @@
+## 关键点
+
+1. 源码仓：https://gitee.com/ja-netfilter/ja-netfilter, 码云还能用, 作者的github已被封禁
+
+
+
+1. pow插件的代码很少，基本原理是通过java agnet代理来替换RSA中模幂运算的结果来伪造验签，并配合其他插件去掉联网激活。
+
+2. 当前分析是基于`https://jetbra.in`网站大佬的power配置，结合RSA以及证书的相关知识反推出激活过程，完全逆向分析出验证过程我并不会。
+
+3. power插件配置如下, 只看第一个配置即可，理论上只有第一个配置即可完成激活：
+
+   ![img](F:\github\markDownDoc\Intellij\assets\1.png)
+
+4. `EQUAL,x,y,z->fakeResult` 对于这里的情况，就是`x.modpow(y,z)=fakeResult`, 就是匹配`x,y,z`三个参数, 并替换模幂运算结果为`fakeResult`, x:证书的签名密文；y:指数；z：jetbrains内置root证书的公钥；fakeResult：证书签名（sh256摘要后的明文）ASN.1格式再进行填充。
+
+5. jetbrains的验证主要就是证书的验签，主要就是5里的内容，但是还有一点需要特别注意，4096位证书的签名域大概会有2000多位，但是2048位证书要短的多，jetbrains内置应该会对这个长度校验，因为2048位证书生成的密钥激活不成功
+
+   ![img](F:\github\markDownDoc\Intellij\assets\2.png)
+
+   
+
+## 基本流程
+
+1. 下面是生成一个可用证书的代码。相关证书配置可参考[cryptography文档](https://cryptography.io/en/latest/)
+
+   ```python
+   COPYimport datetime
+   
+   from cryptography import x509
+   from cryptography.hazmat.backends import default_backend
+   from cryptography.hazmat.primitives import hashes, serialization
+   from cryptography.hazmat.primitives.asymmetric import rsa
+   from cryptography.x509.oid import NameOID
+   
+   one_day = datetime.timedelta(days=1)
+   ten_day = datetime.timedelta(days=3650)
+   today = datetime.datetime.today()
+   yesterday = today - one_day
+   tomorrow = today + ten_day
+   
+   private_key = rsa.generate_private_key(
+       public_exponent=65537,
+       key_size=4096,
+       backend=default_backend()
+   )
+   public_key = private_key.public_key()
+   builder = x509.CertificateBuilder()
+   
+   builder = builder.subject_name(x509.Name([
+       x509.NameAttribute(NameOID.COMMON_NAME, 'MoYuno-from-2022-07-25'),
+   ]))
+   builder = builder.issuer_name(x509.Name([
+       x509.NameAttribute(NameOID.COMMON_NAME, 'JetProfile CA'),
+   ]))
+   builder = builder.not_valid_before(yesterday)
+   builder = builder.not_valid_after(tomorrow)
+   builder = builder.serial_number(x509.random_serial_number())
+   builder = builder.public_key(public_key)
+   
+   certificate = builder.sign(
+       private_key=private_key, algorithm=hashes.SHA256(),
+       backend=default_backend()
+   )
+   private_bytes = private_key.private_bytes(
+       encoding=serialization.Encoding.PEM,
+       format=serialization.PrivateFormat.TraditionalOpenSSL,
+       encryption_algorithm=serialization.NoEncryption())
+   public_bytes = certificate.public_bytes(
+       encoding=serialization.Encoding.PEM)
+   with open("ca.key", "wb") as fout:
+       fout.write(private_bytes)
+   with open("ca.crt", "wb") as fout:
+       fout.write(public_bytes)
+   ```
+
+2. 下面为生成key代码，将第一、第二行输出替换到power配置，第三行即为激活key, ca.key为保存证书私钥的文件。
+
+   ```python
+   COPYimport base64
+   
+   from Crypto.Hash import SHA1, SHA256
+   from Crypto.PublicKey import RSA
+   from Crypto.Signature import pkcs1_15
+   from Crypto.Util.asn1 import DerSequence, DerObjectId, DerNull, DerOctetString
+   from Crypto.Util.number import ceil_div
+   from cryptography import x509
+   from cryptography.hazmat.primitives import hashes
+   from cryptography.hazmat.primitives.asymmetric import padding
+   
+   
+   # noinspection PyTypeChecker
+   def pkcs15_encode(msg_hash, emLen, with_hash_parameters=True):
+       """
+       Implement the ``EMSA-PKCS1-V1_5-ENCODE`` function, as defined
+       :param msg_hash: hash object
+       :param emLen: int
+       :param with_hash_parameters: bool
+       :return: An ``emLen`` byte long string that encodes the hash.
+       """
+       digestAlgo = DerSequence([DerObjectId(msg_hash.oid).encode()])
+   
+       if with_hash_parameters:
+           digestAlgo.append(DerNull().encode())
+   
+       digest = DerOctetString(msg_hash.digest())
+       digestInfo = DerSequence([
+           digestAlgo.encode(),
+           digest.encode()
+       ]).encode()
+   
+       # We need at least 11 bytes for the remaining data: 3 fixed bytes and
+       # at least 8 bytes of padding).
+       if emLen < len(digestInfo) + 11:
+           raise TypeError("Selected hash algorithm has a too long digest (%d bytes)." % len(digest))
+       PS = b'\xFF' * (emLen - len(digestInfo) - 3)
+       return b'\x00\x01' + PS + b'\x00' + digestInfo
+   
+   
+   certBase64 = "MIIFTDCCAzSgAwIBAgIBDTANBgkqhkiG9w0BAQsFADAYMRYwFAYDVQQDDA1KZXRQcm9maWxlIENBMB4XDTIyMDcyNTIzMTcwOVoXDTMyMDcyMzIzMTcwOVowHzEdMBsGA1UEAwwUcHJvZDJ5LWZyb20tMjAyMDEwMTkwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDDx3gz77KvezmZJhwkF/10Q3vESk96tK6wJ00CSKkLybRDeQVOlHX3QAnPL7BjwCTzHqErsuyPuiZ6YTAVE/n7hLhIbh3lC+EBbxpa2hpIdIvUimr70iSrH9ZBWmnn5Fxy4r/r0tbxr34zpQzu4uWLiEqmOiDfRN+Zzj9FBaJ/gKsuhF7zNAbFHsClYntim5furDRITBra28nu0hfQIEBSHGPS2EKWTbKk2ifBLzMEDp99zIGEe/hrLpgBhdwGVD7VJsoeTXnvcgpt+91kiM918GWThO1L3eKU6W2mGZQv1bRyps7Fo61NElNWtJqqZ3KKyxJGyR1QpdOHd9flAesvYwb/lvc4uqYiKqwvvn+4iHPQlLtZDbzj0ICbKtVKSWgSprh0T5ZQGGNWXN4OMHtg9EuXvbagLshTEDkLKLzEBqSNpNmMmyzwyNO9/voQmHLjiWLdjVIYndjl15G+A9Dw5mVYqzKPMLEpHzg6ldkKJkGAxNBhCMUsmbEypT6r7wsdTvgEwFnP8ToOsAb12lSLxoR2bOT3xJ3WIfbyjvlBnauXfdu6SFF/82QFrLtQyddPvCHEiJTI0NmSYhjQObFohXMVVoXjGbXvuqgJNbc5UK06pCGQ2jKw4j6k1kw2g4fEYBd1fvEzb1/t+izpP8dEI0365xh0C1dpQjUj3uyRywIDAQABo4GZMIGWMEgGA1UdIwRBMD+AFKOetkhnQhI2Qb1t4Lm0oFKLl/GzoRykGjAYMRYwFAYDVQQDDA1KZXRQcm9maWxlIENBggkA0myxg7KDeeEwCQYDVR0TBAIwADATBgNVHSUEDDAKBggrBgEFBQcDATALBgNVHQ8EBAMCBaAwHQYDVR0OBBYEFCTaESKW9YVBwJNH6DEjTPTAhAL/MA0GCSqGSIb3DQEBCwUAA4ICAQA29wUDKatiQe1S0qfId+1dRWnYznrHE0Cx41HUaeI5hvdZrFbDIP6syb/S9oAXST6w4pfgh80jk1xVL+B7NT5kFC+AI7mpd8dK8Z+K67tagYg41TdLGfSHqK+lljln5ElqUEN21fba5CVZplE286jy973XFOFbWZUpJC/5onCCAh8pK8AqpN7k3ovR6bfAga41UWdTnGeiyw9+XOj30ryebseTKaDfjQxsxEmyuA8YYCu9lgb58cvVrvc99So8KdOBaxHnxeEfiUqvPA8Y0QG7lc5elZYQ6cbiIqqsb/k9XSgB2Gk4CjuacBSxCAfd06NlJvZSDFSR1HTKhQfPLIQY1OpBC+NrKRWnQT4/IORL6F36gI9lTK+ioX8mzQ2bvXn4sXA3jrpRnGM2WemQvMPvstfSDKfcUdKjwX3rZ2jMwREkx/thtF3Huvsc8suOyzto1faD8mV0m4guq85fb4c9ki6cinz3QM2k6otVvh67gK116RZ7I8P/urTWvK7IOdwOE7UVqtpEe6TKvNhr1rzeaxUMdPcD0kY7fhBpuPwEQA+Xk0uiVR+XbpaPD4HWuapJm+31jC7zBp/BamRI25v26P5qMUQF/+P7eE4Ah/X0Rtf2Qvr2+p9kbfqalT8EiqOsvRiTvlMG1hdo33JdcwsxC05BWvZ++7Af0FgJ3TtFlw=="
+   
+   cert = x509.load_der_x509_certificate(base64.b64decode(certBase64))
+   public_key = cert.public_key()
+   sign = int.from_bytes(cert.signature, byteorder="big", )
+   print(f"sign:{sign}")
+   
+   modBits = public_key.key_size
+   digest_cert = SHA256.new(cert.tbs_certificate_bytes)
+   r = int.from_bytes(pkcs15_encode(digest_cert, ceil_div(modBits, 8)), byteorder='big', signed=False)
+   print(f"result:{r}")
+   
+   licenseId = 'ZCB571FZHV'
+   licensePart = '{"licenseId": "ZCB571FZHV", "licenseeName": "MoYuno", "assigneeName": "", "assigneeEmail": "", "licenseRestriction": "", "checkConcurrentUse": false, "products": [{"code": "PDB", "fallbackDate": "2030-12-31", "paidUpTo": "2030-12-31", "extended": true}, {"code": "PSI", "fallbackDate": "2030-12-31", "paidUpTo": "2030-12-31", "extended": true}, {"code": "PPC", "fallbackDate": "2030-12-31", "paidUpTo": "2030-12-31", "extended": true}, {"code": "PCWMP", "fallbackDate": "2030-12-31", "paidUpTo": "2030-12-31", "extended": true}, {"code": "PPS", "fallbackDate": "2030-12-31", "paidUpTo": "2030-12-31", "extended": true}, {"code": "PRB", "fallbackDate": "2030-12-31", "paidUpTo": "2030-12-31", "extended": true}, {"code": "II", "fallbackDate": "2030-12-31", "paidUpTo": "2030-12-31", "extended": false}, {"code": "PGO", "fallbackDate": "2030-12-31", "paidUpTo": "2030-12-31", "extended": true}, {"code": "PSW", "fallbackDate": "2030-12-31", "paidUpTo": "2030-12-31", "extended": true}, {"code": "PWS", "fallbackDate": "2030-12-31", "paidUpTo": "2030-12-31", "extended": true}], "metadata": "0120220701PSAN000005", "hash": "TRIAL:-594988122", "gracePeriodDays": 7, "autoProlongated": false, "isAutoProlongated": false}'
+   
+   digest = SHA1.new(licensePart.encode('utf-8'))
+   
+   with open('ca.key') as prifile:
+       private_key = RSA.import_key(prifile.read())
+       # 使用私钥对HASH值进行签名
+       signature = pkcs1_15.new(private_key).sign(digest)
+   
+       sig_results = base64.b64encode(signature)
+       licensePartBase64 = base64.b64encode(bytes(licensePart.encode('utf-8')))
+       public_key.verify(
+           base64.b64decode(sig_results),
+           base64.b64decode(licensePartBase64),
+           padding=padding.PKCS1v15(),
+           algorithm=hashes.SHA1(),
+       )
+       result = licenseId + "-" + licensePartBase64.decode('utf-8') + "-" + sig_results.decode('utf-8') + "-" + certBase64
+       print(result)
+   ```
+
+3. power配置
+
+   ```
+   COPY[Result]
+   EQUAL,299213640480477532232613356963433702031002251045851034447586414483519966756292278486543340805051010387298654019573363272008360784689022119017890774114551027339708503004045350343586644811618864305881845465533648400689567858742575422559970141004668011335270078334407666830207988469779150466837407714233763706094062000639780603973844773087781508392275584101394349697501544157473450756019949199684259212935405319499144363514324449339190870632316321795482940183529552098938554099062136011084894473851845239116184148986281123972659644878799379380261449920696338120543502812544746767898798943314889294194101292036595639371186775347484567397344395184405355790360065442444860205472364733334389986946974705941726087707844500957983916062459453221933893215161372392731381189453820187891087273544552705596167883641667321388071603600011784878991949691982964403655253904545535007628440853843739961414609377533977442694446499647779793529580697861112506950060413115797629255454796936312507751116190662225936971532934134905675293377129487625260335951037389915705838362760349227579537971722730753029711967720727791938130994188333268180862035329802322328559778203266156173042101769378930210077375824223343237114381772298569863055041850568390194480790793,65537,860106576952879101192782278876319243486072481962999610484027161162448933268423045647258145695082284265933019120714643752088997312766689988016808929265129401027490891810902278465065056686129972085119605237470899952751915070244375173428976413406363879128531449407795115913715863867259163957682164040613505040314747660800424242248055421184038777878268502955477482203711835548014501087778959157112423823275878824729132393281517778742463067583320091009916141454657614089600126948087954465055321987012989937065785013284988096504657892738536613208311013047138019418152103262155848541574327484510025594166239784429845180875774012229784878903603491426732347994359380330103328705981064044872334790365894924494923595382470094461546336020961505275530597716457288511366082299255537762891238136381924520749228412559219346777184174219999640906007205260040707839706131662149325151230558316068068139406816080119906833578907759960298749494098180107991752250725928647349597506532778539709852254478061194098069801549845163358315116260915270480057699929968468068015735162890213859113563672040630687357054902747438421559817252127187138838514773245413540030800888215961904267348727206110582505606182944023582459006406137831940959195566364811905585377246353->31872219281407242025505148642475109331663948030010491344733687844358944945421064967310388547820970408352359213697487269225694990179009814674781374751323403257628081559561462351695605167675284372388551941279783515209238245831229026662363729380633136520288327292047232179909791526492877475417113579821717193807584807644097527647305469671333646868883650312280989663788656507661713409911267085806708237966730821529702498972114194166091819277582149433578383639532136271637219758962252614390071122773223025154710411681628917523557526099053858210363406122853294409830276270946292893988830514538950951686480580886602618927728470029090747400687617046511462665469446846624685614084264191213318074804549715573780408305977947238915527798680393538207482620648181504876534152430149355791756374642327623133843473947861771150672096834149014464956451480803326284417202116346454345929350148770746553056995922154382822307758515805142704373984019252210715650875853634697920708113806880196144197384637328982263167395073688501517286678083973976140696077590122053014085412828620051470085033364773099146103525313018873319293728800442101520384088109603555959893639842091339193875424402372756980690316933413386064082742205939246341134023323525564261538670
+   ```
+
+4. key
+
+   ```
+   COPYVAE9B0CRYZ-eyJsaWNlbnNlSWQiOiAiVkFFOUIwQ1JZWiIsICJsaWNlbnNlZU5hbWUiOiAiTW9ZdW5vIiwgImFzc2lnbmVlTmFtZSI6ICIiLCAiYXNzaWduZWVFbWFpbCI6ICIiLCAibGljZW5zZVJlc3RyaWN0aW9uIjogIiIsICJjaGVja0NvbmN1cnJlbnRVc2UiOiBmYWxzZSwgInByb2R1Y3RzIjogW3siY29kZSI6ICJQU0kiLCAiZmFsbGJhY2tEYXRlIjogIjIwMzAtMTItMzEiLCAicGFpZFVwVG8iOiAiMjAzMC0xMi0zMSIsICJleHRlbmRlZCI6IHRydWV9LCB7ImNvZGUiOiAiUEMiLCAiZmFsbGJhY2tEYXRlIjogIjIwMzAtMTItMzEiLCAicGFpZFVwVG8iOiAiMjAzMC0xMi0zMSIsICJleHRlbmRlZCI6IGZhbHNlfSwgeyJjb2RlIjogIlBQQyIsICJmYWxsYmFja0RhdGUiOiAiMjAzMC0xMi0zMSIsICJwYWlkVXBUbyI6ICIyMDMwLTEyLTMxIiwgImV4dGVuZGVkIjogdHJ1ZX0sIHsiY29kZSI6ICJQQ1dNUCIsICJmYWxsYmFja0RhdGUiOiAiMjAzMC0xMi0zMSIsICJwYWlkVXBUbyI6ICIyMDMwLTEyLTMxIiwgImV4dGVuZGVkIjogdHJ1ZX0sIHsiY29kZSI6ICJQV1MiLCAiZmFsbGJhY2tEYXRlIjogIjIwMzAtMTItMzEiLCAicGFpZFVwVG8iOiAiMjAzMC0xMi0zMSIsICJleHRlbmRlZCI6IHRydWV9XSwgIm1ldGFkYXRhIjogIjAxMjAyMjA3MDFQU0FOMDAwMDA1IiwgImhhc2giOiAiVFJJQUw6MTMxNzYyODYxMCIsICJncmFjZVBlcmlvZERheXMiOiA3LCAiYXV0b1Byb2xvbmdhdGVkIjogZmFsc2UsICJpc0F1dG9Qcm9sb25nYXRlZCI6IGZhbHNlfQ==-MkDyzvbXWknbzvzkgq9VbTnXNnLqF+j7MLYVYsMc75aGcTMKmEsSN2mSvgbyC4NHbJI4jxwo8+5c2KOP6OrBAxDrFnJCgc/OSOf4T56nMARLpisMly90p68/6sU7b2f0xCuIY6Gs97pDtPIc12lRnrVQv2Sycz3W0pYMBxQkIGNtsXMDdPShPDT7TD1zicTDV6lhwuDIhP6LYLUVWSfDN6DczQRDmUGm1KzNSlFBdoYGUXYCkYKffo7hukCW6ZKdfJLywLwJnabpd6tQDb6kc5gpEhNh6+GzVZXKYvA5PyRlt8RjBT7w0Jim96JH48VyD/+GGa0e8V2Nw6U/uG73LdmPEg2hGF7eKvC+0zU4rpQvj0hUJcvm1r+VQPWDJc+EA+Is3i95Xl56yyAa3JHQ7zOjegQLeYv/+uuPgKqHHpf7X7i+rvRtAQMC1KFNl8wLQJFLp/JGSQ4kVBUpxMuV0o/LDUKn3qs/DwIl7gq24igtEM+wluv0AwKvOUQkGFMgaCqA61GgbJqUaBXleo/GAII72+7GHlAoLv4XJdISfY9x6+iuH96lfTEr2qgdGIKxIz3pT7jhgh1qm+BdSGyB3pJo4cKV530XvuoAZl5scCgz6xQMS+mW+V8bx6nmVKTn0V0qOdaeggIjotjL9mtWlVEguIAPpKJxbBMhZRbrMo0=-MIIExTCCAq2gAwIBAgIUZKjG0XIFJFl/6PfqfOCE4LyPxVowDQYJKoZIhvcNAQELBQAwGDEWMBQGA1UEAwwNSmV0UHJvZmlsZSBDQTAeFw0yMjA3MjgwMTQzNThaFw0zMjA3MjYwMTQzNThaMCExHzAdBgNVBAMMFk1vWXVuby1mcm9tLTIwMjItMDctMjUwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDhykmyOmP3Geexl39gcTG+wuvLUyZxjhuFLutWBud3b10U1yRiz87NUk/NCAId3Qr8qiqwW3Kqe1FpDWG4HUWbIdNYtaRalMAkCSaLXe6QCymtJOpTgbSYwrql8nJJxZ8OLBbyFMdURsWAJFT4DDIZ9J62xSKeTBbSNwfm5vIeKkoHrqHTlQWP1pXkgEE5D91EQ1UcOzkCdNyW9rphQpk9ZfD/0+QBxS06zgngh53UeJSAFGKWyPlQrhwfOp+8AEcwkwFI20T5UzsQFZ5jjgpfg2GlNiMuvM48bXFybMB0yFes54ukKPnmgOb8BQ7fKuSgB2ZTOGQT1YcAI8/zJECcXYaLOnaQ7UA8WKyXY9bPHxXykW/xHIrHK11hnmgMY0rnVKVeVke+DsiVT/E7KvjburWiDCm5yAeoG7hZXIoCm3+rwzG2w6lzVIM1/J1XN4e8BWS6ZUKuMaPwX5nOmWFLl7FgTPEC9JQasSFhSdeWHiHT3+jJD3SDxG2fVJkGE8WvFFFI90NPmYELnAU7byEqiuJYapkawIlNARWYgGTi8JMxN8jB2yGofBb/s+cG/JEWmTWMoPrwmfVxKfC5M72iob8hZf9NCmJ33iKCotIyIT5NkUKeGw1CrQx+CH/MJqb0CCtwVnSm8crNc/Lf/ufnBOH+IeD4wM2YlW+8g1XTHQIDAQABMA0GCSqGSIb3DQEBCwUAA4ICAQBJV9PB17o4P6+4v2gC6RBSeAIbePx4YyVXo/uRbALf/MBs70kg+LXcQPGS8KTWHKntKUHyZezprMBG2X8NO1EUtKNhA4enFA6zZP+9qCzxfHsdZKG/nVgrvD34xmPovhWpTaQgQwtfruXESWEtVMyk0qQxaMf5VtpFw/3CUXljCpmGi1nNuQerF+Bhp63lpUv3qpyG9Hz0iRpO77xC0VhnCCQ3yB1DoIJZ6g97+6cxdsFTFCqsEGVrclolkkiFRURFqBkF4K9v/N39rc4JL42uvGMMD/gZBFVYhPuIsAgIwrp42q+SmDbr0VnVZFozpEE7ljQv8W4C6BxcDKbQX1ejrmxsXtYu+1M/ot7ljT4XXAeuqUkYb+6ly+kwTbuc0hqFsVLB4Vr+y3rZbK1IVTFH+QCrl7Kj8feT5WgsWYelMK1N/n/X5sK1Y7d8ZrdcbUJIet11zoDaHDKyvUDow5h4WQmfkZSD1FYk3ddBdRmEWl8D7vZ/SKuwHS5yhR7OIOiFHl4WoTQsihaNPadFDJ9PdUKAu9YE8CFrSoE+CO6QsQihl0iD889woqLnMwJIB5Mi7oSy43yIWK4oB5RI/uObqqOEiD/J3bmM/dOKxcf6Z9M8lTBPR+3L6QKPpSag3hBAsoofY8S2unKa/e+5mfjOp1ox8JcjlgKWt/V9NH+9CQ==
+   ```
+
+5. 2022.2由于默认启用jdk17，需额外添加
+
+   ```
+   COPY--add-opens=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED
+   --add-opens=java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED
+   ```
+
+6. 结果
+
+   ![img](F:\github\markDownDoc\Intellij\assets\3.png)
+
+1. 对证书验证其实就是验证证书中携带的签名是否和jetbains计算的签名是否一致，jetbrains会使用其内置根证书z尝试对签名解密，即计算：`x.modpow(y,z)`（具体的签名验签原理可以看另外一篇[RSA加密&签名](https://xuzhengtong.com/2022/07/25/secure/RSA/)），但是这里的证书不是由jetbrains签发，所以要替换计算的结果为fakeResult，`EQUAL,x,y,z->fakeResult`中：
+
+   x：证书的签名密文，对应上边代码第一行输出
+
+   y：证书指数，当前场景固定65535
+
+   z：内置根证书的公钥，填写：
+
+   ```
+   860106576952879101192782278876319243486072481962999610484027161162448933268423045647258145695082284265933019120714643752088997312766689988016808929265129401027490891810902278465065056686129972085119605237470899952751915070244375173428976413406363879128531449407795115913715863867259163957682164040613505040314747660800424242248055421184038777878268502955477482203711835548014501087778959157112423823275878824729132393281517778742463067583320091009916141454657614089600126948087954465055321987012989937065785013284988096504657892738536613208311013047138019418152103262155848541574327484510025594166239784429845180875774012229784878903603491426732347994359380330103328705981064044872334790365894924494923595382470094461546336020961505275530597716457288511366082299255537762891238136381924520749228412559219346777184174219999640906007205260040707839706131662149325151230558316068068139406816080119906833578907759960298749494098180107991752250725928647349597506532778539709852254478061194098069801549845163358315116260915270480057699929968468068015735162890213859113563672040630687357054902747438421559817252127187138838514773245413540030800888215961904267348727206110582505606182944023582459006406137831940959195566364811905585377246353
+   ```
+
+   
+
+   fakeResult：对应上边代码第二行输出
+
+2. 另外，这里的licensePart对应的产品是pycharm，其它的产品要替换licensePart的格式，具体的做法是找一个对应产品的key，使用`-`拆分，然后对拆出的第二个字符串base64解出对应json串。上边的代码是正向的生成key的过程，可以详细再看一下，理解一下为什么这么搞

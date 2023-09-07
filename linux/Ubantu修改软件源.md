@@ -18,3 +18,14 @@ deb-src http://mirrors.aliyun.com/ubuntu/ trusty-updates main multiverse restric
 然后保存退出
 \3. 第三步：
 sudo apt-get update，更新成功
+
+
+
+
+
+离线包下载
+
+```shell
+apt-get --download-only -o=dir::cache=/home/fh install vim
+```
+
