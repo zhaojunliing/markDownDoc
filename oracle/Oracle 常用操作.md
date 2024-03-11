@@ -483,3 +483,12 @@ from
  ) SESS_INFO 
 where LOCK_INFO.SESSION_ID=SESS_INFO.SID ;
 ```
+
+#### 查看数据库信息
+
+```sql
+SELECT * FROM nls_database_parameters WHERE parameter = 'NLS_CHARACTERSET';  --查看数据库编码
+
+SELECT * FROM v$version;  --查看数据库版本
+```
+
