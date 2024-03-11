@@ -1,4 +1,4 @@
-#Ubantu修改静态IP地址
+# Ubantu修改静态IP地址
 
 ## 一、修改静态IP
 
