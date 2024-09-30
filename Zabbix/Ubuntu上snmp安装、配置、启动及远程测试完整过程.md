@@ -103,7 +103,7 @@ UCD-SNMP-MIB::memTotalSwap.0 = INTEGER: 1950716 kB
 
 ​    可以看到，现在的输出就非常直观了！这样之后，其实我们在获取相关节点信息时，也可以不用输入那一长串的数字了：
 
-```
+```shell
 ubuntu@leaf:/etc/snmp$ snmpwalk -v 2c -c public localhost memTotalSwap.0
 UCD-SNMP-MIB::memTotalSwap.0 = INTEGER: 1950716 kB
 ubuntu@leaf:/etc/snmp$ snmpwalk -v 2c -c public localhost memTotalReal.0

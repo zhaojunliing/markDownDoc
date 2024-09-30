@@ -55,6 +55,13 @@ vi /etc/sysconfig/iptables
 –sport 数据从服务器出去，则为数据源端口使用
 –j 就是指定是 ACCEPT -接收 或者 DROP 不接收
 
+禁止ping主机
+
+```shell
+sudo iptables -A INPUT -p icmp --icmp-type echo-request -j DROP
+sudo iptables -A OUTPUT -p icmp --icmp-type echo-reply -j DROP
+```
+
 ## 二、firewalld
 
 Centos7默认安装了firewalld，如果没有安装的话，可以使用 yum install firewalld firewalld-config进行安装。
@@ -128,7 +135,9 @@ firewall-cmd --reload或firewall-cmd --complete-reload(两者的区别就是第�
 ```
 17.查看指定区域所有打开的端口
 ```shell
- firewall-cmd --zone=public --list-ports
+ firewall-cmd --zone=public --list-ports  
+ 
+ firewall-cmd --zone=public --list-all
 ```
 18.在指定区域打开端口（记得重启防火墙）
 ```shell
@@ -142,3 +151,160 @@ firewall-cmd --zone=public --add-port=80/tcp(永久生效再加上 --permanent)
 
 
 参考：https://www.imsxm.com/2018/05/using-firewalls-on-centos-7.html
+
+### 四、常规配置示例
+
+FirewallD 有两个配置集：“运行时”和“持久”。
+运行时：在系统重新启动或重新启动 FirewallD时，不会保留运行时的配置更改；
+持久： 持久配置集的更改不会应用于正在运行的系统。（重新加载配置可以生效）
+
+默认情况下**，firewall--cmd 命令适用于运行时配置，但使用 --permanent 标志将保存到持久配置中**。
+
+```
+firewall-cmd --zone=public --add-service=ssh --timeout=5m
+```
+
+说明：该命令的有效期为5分钟（s 秒  m分  h时）
+
+　　1、启动或禁止http服务
+
+```
+[root@text01 ~]# firewall-cmd --zone=public --add-service=http --permanent
+success
+[root@text01 ~]# firewall-cmd --zone=public --remove-service=http --permanent
+success
+```
+
+2、只允许指定IP地址访问ssh（端口修改成了20000）
+
+```
+firewall-cmd --permanent --add-rich-rule="rule family="ipv4" source address="116.255.126.42/32" port protocol="tcp" port="50000" accept
+
+firewall-cmd --permanent --remove-service=ssh
+firewall-cmd --reload
+```
+
+![img](F:\github\markDownDoc\linux\assets\f44ac588f23c881ac57a1339c260e13f.png)
+
+1、禁止ping主机
+
+```
+sudo firewall-cmd --permanent --add-icmp-block=echo-request
+sudo firewall-cmd --permanent --add-icmp-block=echo-reply
+sudo firewall-cmd --reload
+```
+
+2、允许或禁用12345端口的TCP流量
+
+```
+firewall-cmd --zone=public --add-port=12345/tcp --permanent
+firewall-cmd --zone=public --remove-port=12345/tcp --permanent
+```
+
+　　3、端口转发
+
+ 　在用一台服务上将80端口的流量转发到12345端口上
+
+```
+    [root@text01 ~]# firewall-cmd --zone="public" --add-forward-port=port=80:proto=tcp:toport=12345
+success
+```
+
+　　将端口转发到另外一台服务器上：
+
+　　　　在需要的区域激活masquerade
+
+```
+firewall-cmd --zone=public --add-masquerade
+```
+
+　　　　将本地的80端口的流量转发到IP地址为：10.0.0.90的远程服务器上的8080端口上
+
+```
+firewall-cmd --zone="public" --add-forward-port=port=80:proto=tcp:toport=8080:toaddr=10.0.0.90
+```
+
+　　　　4、删除规则，用--remove替换--add
+
+```
+firewall-cmd --zone=public --remove-masquerade
+```
+
+### 五、高级配置示例
+
+服务和端口适用于基本配置，但对于高级情景可能会限制较多。 丰富Rich规则和直接Direct接口允许你为任何端口、协议、地址和操作向任何区域 添加完全自定义的防火墙规则。
+
+可以使用 nam firewalld.richlanguage
+
+使用 `--add-rich-rule`、`--list-rich-rules` 、 `--remove-rich-rule` 和 firewall-cmd 命令来管理它们。
+
+### 常见例子：
+
+　　1、允许来自主机 192.168.0.14 的所有 IPv4 流量
+
+```
+firewall-cmd --zone=public --add-rich-rule 'rule family="ipv4" source address=192.168.0.14 accept'
+```
+
+　　2、拒绝来自主机 192.168.1.14 到 22 端口的 IPv4 的 TCP 流量。
+
+```
+ firewall-cmd --zone=public --add-rich-rule 'rule family="ipv4" source address="192.168.1.14" port port=22 protocol=tcp reject'
+```
+
+　　3、允许来自主机 10.1.0.3 到 80 端口的 IPv4 的 TCP 流量，并将流量转发到 6532 端口上。 
+
+```
+firewall-cmd --zone=public --add-rich-rule 'rule family=ipv4 source address=10.1.0.3 forward-port port=80 protocol=tcp to-port=6532'
+```
+
+　　　4、将主机 172.31.4.2 上 80 端口的 IPv4 流量转发到 8080 端口（需要在区域上激活 masquerade）。
+
+```
+firewall-cmd --zone=public --add-rich-rule 'rule family=ipv4 forward-port port=80 protocol=tcp to-port=8080 to-addr=172.31.4.2'
+```
+
+　　　5、列出你目前的丰富规则：
+
+```
+firewall-cmd --list-rich-rules
+```
+
+​     6、指定一个固定IP访问指定端口
+
+```
+firewall-cmd --permanent --add-rich-rule="rule family="ipv4" source address="16.25.12.2" port protocol="tcp" port="21" accept"
+```
+
+### 六、iptables的直接接口
+
+FirewallD 提供了一个直接Direct接口，允许你给它传递原始 iptables 命令。 直接接口规则不是持久的，除非使用 `--permanent`。
+
+要查看添加到 FirewallD 的所有自定义链或规则：
+
+```
+firewall-cmd --direct --get-all-chains
+firewall-cmd --direct --get-all-rules
+```
+
+###  七、开放一定范围的端口
+
+```
+Firewall开启常见端口命令：
+firewall-cmd --zone=public --add-port=80/tcp --permanent
+
+Firewall关闭常见端口命令：
+firewall-cmd --zone=public --remove-port=80/tcp --permanent
+
+批量添加区间端口
+firewall-cmd --zone=public --add-port=4400-4600/udp --permanent
+
+重启防火墙命令：
+firewall-cmd --reload  或者   service firewalld restart
+
+查看端口列表：
+firewall-cmd --permanent --list-port
+
+对指定IP地址开放一定范围的端口
+firewall-cmd --permanent --add-rich-rule="rule family="ipv4" source address="16.25.12.2" port protocol="tcp" port="10000-20000" accept"
+```

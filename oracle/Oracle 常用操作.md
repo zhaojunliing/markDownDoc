@@ -133,7 +133,10 @@ select tablespace_name,file_id,bytes/1024/1024/1024,file_name from dba_data_file
 select count(*) from user_tables;
 
 --查询当前用户表
-select wm_concat(object_name) from user_objects where lower(object_type)='table';  
+select wm_concat(object_name) from user_objects where lower(object_type)='table'; 
+
+--查询当前用户的表，并派出指定表
+select wm_concat(object_name) from user_objects where lower(object_type)='table' and table_name NOT IN ('EXCLUDED_TABLE1', 'EXCLUDED_TABLE2');
 
 --查询对象最后修改时间
 select object_name, created,last_ddl_time from user_objects
@@ -490,5 +493,7 @@ where LOCK_INFO.SESSION_ID=SESS_INFO.SID ;
 SELECT * FROM nls_database_parameters WHERE parameter = 'NLS_CHARACTERSET';  --查看数据库编码
 
 SELECT * FROM v$version;  --查看数据库版本
+
+SELECT dbms_metadata.get_ddl('TABLE', 'T_S_TRAIN_LKJ') FROM dual; --查看创建表的sql
 ```
 

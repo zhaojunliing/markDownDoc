@@ -59,8 +59,8 @@ git config --global --unset https.proxy
 
 ```
 md E:\chrome\cef\
-md C:\chrome\chromium\src\
-md C:\chrome\depot_tools\
+md E:\chrome\chromium\src\
+md E:\chrome\depot_tools\
 ```
 
 ### 2 添加环境变量

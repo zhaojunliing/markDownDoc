@@ -28,5 +28,8 @@ pip3 install -i http://192.168.20.110:8081/nexus/repository/pypi-group/simple/ f
 
 pip3 install -i https://192.168.10.161/nexus/repository/pypi-group/simple/ fhUtil --trusted-host 192.168.10.161
 
+pip3 install dmPython
+
+
 ```
 

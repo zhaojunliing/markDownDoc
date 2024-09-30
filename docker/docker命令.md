@@ -12,6 +12,7 @@ docker cp home/tom/my.cnf xxxx:/etc/mysql/
 
 ```
 docker update --restart=always  xxxxx
+docker update --restart=no  xxxxx
 ```
 
 ```shell
@@ -27,6 +28,8 @@ docker images
 docker rmi xxxxx
 docker ps -a
 docker ps
+docker stats
+docker top <容器id>
 ```
 
 ```shell
@@ -59,6 +62,8 @@ docker build -t shykes/myapp:1.0.2 -t shykes/myapp:latest .
 
 docker build --add-host=docker:10.180.0.1 .
 
+--查看docker image构建命令
+docker history --no-trunc image
 
 ```
 
