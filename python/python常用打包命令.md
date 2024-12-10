@@ -30,6 +30,10 @@ pip3 install -i https://192.168.10.161/nexus/repository/pypi-group/simple/ fhUti
 
 pip3 install dmPython
 
+pip3 install -i https://192.168.10.161/nexus/repository/pypi-group/simple/ sqlalchemy-dm-dialect --trusted-host 192.168.10.161
 
+pip uninstall sqlalcherm_dm
+
+ pip3 install -i https://192.168.10.161/nexus/repository/pypi-group/simple/ pipreqs --trusted-host 192.168.10.161
 ```
 

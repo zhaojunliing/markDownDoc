@@ -5,7 +5,7 @@
 ```
 CEF Branch：5414
 CEF Commit：ca3ebf119e
-Chromium Version：109.0.5414.87
+Chromium Version：109.0.5414.120
 
 具体版本信息可通过cef CHROMIUM_BUILD_COMPATIBILITY.txt 确定
 ```
@@ -107,9 +107,9 @@ git clone https://bitbucket.org/chromiumembedded/cef.git -b 5414
 ```
 cd E:\chrome\chromium
 
-:: clone指定tag(109.0.5414.87)的源码, (cef 5414分支 对应chromiun tag: 109.0.5414.87)
+:: clone指定tag(109.0.5414.120)的源码, (cef 5414分支 对应chromiun tag: 109.0.5414.120)
 :: "--depth 1": 只下载当前版本不需要历史提交记录, 否则耗时严重且浪费储存空间或者意外中断
-git clone https://chromium.googlesource.com/chromium/src.git -b 109.0.5414.87 --depth 500
+git clone https://chromium.googlesource.com/chromium/src.git -b 109.0.5414.120 --depth 500
 ```
 
 3）下载depot_tools
@@ -167,6 +167,24 @@ cd E:\chrome\chromium
 set DEPOT_TOOLS_WIN_TOOLCHAIN=0
 
 gclient runhooks
+
+```
+
+```shell
+::构建项目的最后一步出错
+::需要修改.gclient
+solutions = [
+  { "name"        : 'src',
+    "url"         : 'https://chromium.googlesource.com/chromium/src.git',
+    "deps_file"   : 'DEPS',
+    "managed"     : False,
+    "custom_deps" : {
+    },
+    "custom_vars": {
+      "checkout_pgo_profiles":True
+    },
+  },
+]
 ```
 
 *此命令执行过程中可能会中途暂停或失败，耐心等待或重复执行此命令直到成功为止*
@@ -248,8 +266,11 @@ cd E:\chrome\chromium\src\cef\tools
 make_distrib.bat --ninja-build --client
 :: 打包32位的
 make_distrib.bat --allow-partial --sandbox --ninja-build --no-archive --no-symbols --no-docs --minimal
+
+:: 打包客户端的
+make_distrib.bat --ninja-build --client --x64-build
 :: 打包64位的
-make_distrib.bat --allow-partial --sandbox --ninja-build --no-archive --no-symbols --no-docs --minimal
+make_distrib.bat --allow-partial --sandbox --ninja-build --x64-build --no-archive --no-symbols --no-docs --minimal
 ```
 
 在 E:\chrome\chromium\src\cef\binary_distrib 目录下就可以看到打包过的文件了
